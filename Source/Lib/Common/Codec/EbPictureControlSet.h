@@ -13884,6 +13884,10 @@ extern "C" {
 #endif
         uint8_t   potential_logo_sb;
         uint8_t   is_edge_sb;
+        uint32_t  tile_start_x;
+        uint32_t  tile_start_y;
+        uint32_t  tile_end_x;
+        uint32_t  tile_end_y;
     } SbParams;
 
     typedef struct SbGeom

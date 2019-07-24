@@ -23,7 +23,6 @@
 
 void av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
 void av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
-void set_tile_info(PictureParentControlSet * pcs_ptr);
 #if ENABLE_CDF_UPDATE
 extern MvReferenceFrame svt_get_ref_frame_type(uint8_t list, uint8_t ref_idx);
 #endif
@@ -697,8 +696,6 @@ void* picture_manager_kernel(void *input_ptr)
                         }
 
                         ChildPictureControlSetPtr->parent_pcs_ptr->av1_cm->pcs_ptr = ChildPictureControlSetPtr;
-
-                        set_tile_info(ChildPictureControlSetPtr->parent_pcs_ptr);
 
                         struct PictureParentControlSet     *ppcs_ptr = ChildPictureControlSetPtr->parent_pcs_ptr;
                         Av1Common *const cm = ppcs_ptr->av1_cm;

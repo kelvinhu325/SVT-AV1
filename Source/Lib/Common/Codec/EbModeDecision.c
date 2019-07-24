@@ -1265,6 +1265,11 @@ void inject_mvp_candidates_II(
     IntMv    nearestmv[2], nearmv[2], ref_mv[2];
 
     MvReferenceFrame rf[2];
+    int inside_tile = 1;
+    SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet *)picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
     av1_set_ref_frame(rf, ref_pair);
 
     //single ref/list
@@ -1282,6 +1287,9 @@ void inject_mvp_candidates_II(
             context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, frame_type) == EB_FALSE :
             context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, frame_type) == EB_FALSE;
 
+        if(umv0tile)
+            inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+        inj_mv = inj_mv && inside_tile;
         if (inj_mv) {
             candidateArray[canIdx].type = INTER_MODE;
             candidateArray[canIdx].inter_mode = NEARESTMV;
@@ -1347,6 +1355,9 @@ void inject_mvp_candidates_II(
                 context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, frame_type) == EB_FALSE :
                 context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, frame_type) == EB_FALSE;
 
+            if(umv0tile)
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            inj_mv = inj_mv && inside_tile;
             if (inj_mv) {
                 candidateArray[canIdx].type = INTER_MODE;
                 candidateArray[canIdx].inter_mode = NEARMV;
@@ -1403,6 +1414,11 @@ void inject_mvp_candidates_II(
 
             inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
+            if(umv0tile) {
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                              is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            }
+            inj_mv = inj_mv && inside_tile;
             if (inj_mv) {
                 candidateArray[canIdx].type = INTER_MODE;
                 candidateArray[canIdx].inter_mode = NEAREST_NEARESTMV;
@@ -1465,6 +1481,11 @@ void inject_mvp_candidates_II(
 
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
+                if(umv0tile) {
+                    inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                  is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                }
+                inj_mv = inj_mv && inside_tile;
                 if (inj_mv) {
                     candidateArray[canIdx].type = INTER_MODE;
                     candidateArray[canIdx].inter_mode = NEAR_NEARMV;
@@ -1522,6 +1543,11 @@ void inject_new_nearest_new_comb_candidates(
     uint8_t inj_mv;
     uint32_t                  canIdx = *candTotCnt;
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int inside_tile = 1;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);// && (sequence_control_set_ptr->static_config.tile_rows * sequence_control_set_ptr->static_config.tile_columns) > 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
     MvReferenceFrame rf[2];
     av1_set_ref_frame(rf, ref_pair);
@@ -1543,6 +1569,11 @@ void inject_new_nearest_new_comb_candidates(
 
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
+                if(umv0tile) {
+                    inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                  is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                }
+                inj_mv = inj_mv && inside_tile;
                 if (inj_mv) {
 
                     candidateArray[canIdx].type = INTER_MODE;
@@ -1614,6 +1645,11 @@ void inject_new_nearest_new_comb_candidates(
 
                 inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, ref_pair) == EB_FALSE;
 
+                if(umv0tile) {
+                    inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                  is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                }
+                inj_mv = inj_mv && inside_tile;
                 if (inj_mv)
                 {
 
@@ -1698,6 +1734,16 @@ void inject_warped_motion_candidates(
     uint8_t drli, maxDrlIndex;
     IntMv nearestmv[2], nearmv[2], ref_mv[2];
 
+    int inside_tile = 1;
+    SequenceControlSet *sequence_control_set_ptr = (SequenceControlSet *)picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_wrapper_ptr->object_ptr;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
+
+    if(umv0tile)
+        inside_tile = is_inside_tile_boundary(&(xd->tile), context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.col, context_ptr->cu_ptr->ref_mvs[LAST_FRAME][0].as_mv.row, mi_col, mi_row, context_ptr->blk_geom->bsize);
+    if(inside_tile)
+    {
     //NEAREST_L0
         candidateArray[canIdx].type = INTER_MODE;
         candidateArray[canIdx].inter_mode = NEARESTMV;
@@ -1740,6 +1786,7 @@ void inject_warped_motion_candidates(
 
         if (candidateArray[canIdx].local_warp_valid)
             INCRMENT_CAND_TOTAL_COUNT(canIdx);
+    }
 
     //NEAR_L0
     maxDrlIndex = GetMaxDrlIndex(xd->ref_mv_count[LAST_FRAME], NEARMV);
@@ -1782,6 +1829,10 @@ void inject_warped_motion_candidates(
             mv_0.y = candidateArray[canIdx].motion_vector_yl0;
             MvUnit mv_unit;
             mv_unit.mv[0] = mv_0;
+            if(umv0tile)
+                inside_tile = is_inside_tile_boundary(&(xd->tile), mv_0.x, mv_0.y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            if(inside_tile)
+            {
             candidateArray[canIdx].local_warp_valid = warped_motion_parameters(
                 picture_control_set_ptr,
                 context_ptr->cu_ptr,
@@ -1795,6 +1846,7 @@ void inject_warped_motion_candidates(
 
             if (candidateArray[canIdx].local_warp_valid)
                 INCRMENT_CAND_TOTAL_COUNT(canIdx);
+            }
     }
 
     // NEWMV L0
@@ -1866,6 +1918,10 @@ void inject_warped_motion_candidates(
         mv_0.y = candidateArray[canIdx].motion_vector_yl0;
         MvUnit mv_unit;
         mv_unit.mv[0] = mv_0;
+        if(umv0tile)
+            inside_tile = is_inside_tile_boundary(&(xd->tile), mv_0.x, mv_0.y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+        if(inside_tile)
+        {
         candidateArray[canIdx].local_warp_valid = warped_motion_parameters(
             picture_control_set_ptr,
             context_ptr->cu_ptr,
@@ -1879,6 +1935,7 @@ void inject_warped_motion_candidates(
 
         if (candidateArray[canIdx].local_warp_valid)
             INCRMENT_CAND_TOTAL_COUNT(canIdx);
+        }
     }
         }
     }
@@ -1909,6 +1966,12 @@ void inject_new_candidates(
     const MeLcuResults *me_results = picture_control_set_ptr->parent_pcs_ptr->me_results[me_sb_addr];
     uint8_t total_me_cnt = me_results->total_me_candidate_index[me_block_offset];
     const MeCandidate *me_block_results = me_results->me_candidate[me_block_offset];
+    uint8_t inj_mv;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int inside_tile = 1;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index)
     {
@@ -1925,7 +1988,12 @@ void inject_new_candidates(
             int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].x_mv << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][list0_ref_index].y_mv << 1;
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, list0_ref_index);
-            if (context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+
+            inj_mv = context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+            if(umv0tile)
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            inj_mv = inj_mv && inside_tile;
+            if (inj_mv) {
 
 
                 candidateArray[canTotalCnt].type = INTER_MODE;
@@ -1991,7 +2059,11 @@ void inject_new_candidates(
                 int16_t to_inject_mv_x = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].x_mv << 1;
                 int16_t to_inject_mv_y = use_close_loop_me ? inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1 : me_results->me_mv_array[me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].y_mv << 1;
                 uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, list1_ref_index);
-                if (context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+                inj_mv = context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+                if(umv0tile)
+                    inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                inj_mv = inj_mv && inside_tile;
+                if (inj_mv) {
 
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
@@ -2061,7 +2133,13 @@ void inject_new_candidates(
                     rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
                     rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
                     uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-                    if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+                    inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+                    if(umv0tile) {
+                        inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                      is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                    }
+                    inj_mv = inj_mv && inside_tile;
+                    if (inj_mv) {
 
                         candidateArray[canTotalCnt].type = INTER_MODE;
 

@@ -303,6 +303,7 @@ typedef struct EbConfig
     EbBool                   improve_sharpness;
     uint32_t                 screen_content_mode;
     uint32_t                 high_dynamic_range_input;
+    EbBool                   unrestricted_motion_vector;
 
     /****************************************
      * Annex A Parameters
