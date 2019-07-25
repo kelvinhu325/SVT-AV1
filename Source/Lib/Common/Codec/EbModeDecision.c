@@ -520,6 +520,12 @@ void Unipred3x3CandidatesInjection(
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool isCompoundEnabled = (frm_hdr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     IntMv  bestPredmv[2] = { {0}, {0} };
+    uint8_t inj_mv;
+    int inside_tile = 1;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
     // (8 Best_L0 neighbors)
     //const MeLcuResults_t *meResults = pictureControlSetPtr->ParentPcsPtr->meResultsPtr[lcuAddr];
@@ -542,7 +548,11 @@ void Unipred3x3CandidatesInjection(
         int16_t to_inject_mv_x = use_close_loop_me ? (inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][0] + BIPRED_3x3_X_POS[bipredIndex]) << 1 : (me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].x_mv + BIPRED_3x3_X_POS[bipredIndex]) << 1;
         int16_t to_inject_mv_y = use_close_loop_me ? (inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] + BIPRED_3x3_Y_POS[bipredIndex]) << 1 : (me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].y_mv + BIPRED_3x3_Y_POS[bipredIndex]) << 1;
         uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, list0_ref_index);
-        if (context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+        inj_mv = context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+        if(umv0tile)
+            inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+        inj_mv = inj_mv && inside_tile;
+        if (inj_mv) {
             candidateArray[canTotalCnt].type = INTER_MODE;
             candidateArray[canTotalCnt].distortion_ready = 0;
             candidateArray[canTotalCnt].use_intrabc = 0;
@@ -618,7 +628,11 @@ void Unipred3x3CandidatesInjection(
             int16_t to_inject_mv_x = use_close_loop_me ? (inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] + BIPRED_3x3_X_POS[bipredIndex]) << 1 : (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].x_mv + BIPRED_3x3_X_POS[bipredIndex]) << 1;
             int16_t to_inject_mv_y = use_close_loop_me ? (inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] + BIPRED_3x3_Y_POS[bipredIndex]) << 1 : (me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].y_mv + BIPRED_3x3_Y_POS[bipredIndex]) << 1;
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, list1_ref_index);
-            if (context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+            inj_mv = context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+            if(umv0tile)
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            inj_mv = inj_mv && inside_tile;
+            if (inj_mv) {
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -697,6 +711,12 @@ void Bipred3x3CandidatesInjection(
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool isCompoundEnabled = (frm_hdr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     IntMv  bestPredmv[2] = { {0}, {0} };
+    uint8_t inj_mv;
+    int inside_tile = 1;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
     if (isCompoundEnabled) {
         /**************
@@ -727,7 +747,13 @@ void Bipred3x3CandidatesInjection(
         rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
         rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
         uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-        if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+        inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+        if(umv0tile) {
+            inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                          is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+        }
+        inj_mv = inj_mv && inside_tile;
+        if (inj_mv) {
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -803,7 +829,13 @@ void Bipred3x3CandidatesInjection(
             rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
             rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
             uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-            if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+            inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+            if(umv0tile) {
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                              is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            }
+            inj_mv = inj_mv && inside_tile;
+            if (inj_mv) {
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
                 candidateArray[canTotalCnt].use_intrabc = 0;
@@ -890,6 +922,12 @@ void eighth_pel_unipred_refinement(
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     IntMv  bestPredmv[2] = { {0}, {0} };
+    uint8_t inj_mv;
+    int inside_tile = 1;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
     // (8 Best_L0 neighbors)
     for (uint8_t me_candidate_index = 0; me_candidate_index < total_me_cnt; ++me_candidate_index) {
@@ -910,7 +948,11 @@ void eighth_pel_unipred_refinement(
                 int16_t to_inject_mv_y = use_close_loop_me ? ((inloop_me_context->inloop_me_mv[0][0][close_loop_me_index][1] << 1) + BIPRED_3x3_Y_POS[bipredIndex])  : ((me_results->me_mv_array[context_ptr->me_block_offset][list0_ref_index].y_mv << 1) + BIPRED_3x3_Y_POS[bipredIndex]);
                 uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, list0_ref_index);
 
-                if (context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+                inj_mv = context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+                if(umv0tile)
+                    inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                inj_mv = inj_mv && inside_tile;
+                if (inj_mv) {
                     candidateArray[canTotalCnt].type = INTER_MODE;
                     candidateArray[canTotalCnt].distortion_ready = 0;
                     candidateArray[canTotalCnt].use_intrabc = 0;
@@ -979,7 +1021,11 @@ void eighth_pel_unipred_refinement(
                     int16_t to_inject_mv_x = use_close_loop_me ? ((inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][0] << 1) + BIPRED_3x3_X_POS[bipredIndex])  : ((me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].x_mv << 1) + BIPRED_3x3_X_POS[bipredIndex]);
                     int16_t to_inject_mv_y = use_close_loop_me ? ((inloop_me_context->inloop_me_mv[1][0][close_loop_me_index][1] << 1) + BIPRED_3x3_Y_POS[bipredIndex])  : ((me_results->me_mv_array[context_ptr->me_block_offset][((sequence_control_set_ptr->mrp_mode == 0) ? 4 : 2) + list1_ref_index].y_mv << 1) + BIPRED_3x3_Y_POS[bipredIndex]);
                     uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_1, list1_ref_index);
-                    if (context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+                    inj_mv = context_ptr->injected_mv_count_l1 == 0 || mrp_is_already_injected_mv_l1(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+                    if(umv0tile)
+                        inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                    inj_mv = inj_mv && inside_tile;
+                    if (inj_mv) {
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -1052,6 +1098,12 @@ void eighth_pel_bipred_refinement(
     EbBool isCompoundEnabled = (picture_control_set_ptr->parent_pcs_ptr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     IntMv  bestPredmv[2] = { {0}, {0} };
     MvReferenceFrame rf[2];
+    uint8_t inj_mv;
+    int inside_tile = 1;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
+    uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
+    uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
     if (isCompoundEnabled) {
         /**************
        NEW_NEWMV
@@ -1076,7 +1128,13 @@ void eighth_pel_bipred_refinement(
                     rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
                     rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
                     uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-                    if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+                    inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+                    if(umv0tile) {
+                        inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                      is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                    }
+                    inj_mv = inj_mv && inside_tile;
+                    if (inj_mv) {
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -1147,7 +1205,13 @@ void eighth_pel_bipred_refinement(
                     rf[0] = svt_get_ref_frame_type(me_block_results_ptr->ref0_list, list0_ref_index);
                     rf[1] = svt_get_ref_frame_type(me_block_results_ptr->ref1_list, list1_ref_index);
                     uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-                    if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+                    inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+                    if(umv0tile) {
+                        inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l0, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                                      is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l1, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+                    }
+                    inj_mv = inj_mv && inside_tile;
+                    if (inj_mv) {
                         candidateArray[canTotalCnt].type = INTER_MODE;
                         candidateArray[canTotalCnt].distortion_ready = 0;
                         candidateArray[canTotalCnt].use_intrabc = 0;
@@ -1545,7 +1609,7 @@ void inject_new_nearest_new_comb_candidates(
     ModeDecisionCandidate    *candidateArray = context_ptr->fast_candidate_array;
     MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
     int inside_tile = 1;
-    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);// && (sequence_control_set_ptr->static_config.tile_rows * sequence_control_set_ptr->static_config.tile_columns) > 0);
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
     uint32_t mi_row = context_ptr->cu_origin_y >> MI_SIZE_LOG2;
     uint32_t mi_col = context_ptr->cu_origin_x >> MI_SIZE_LOG2;
 
@@ -2231,6 +2295,10 @@ void  inject_inter_candidates(
     EbBool isCompoundEnabled = (frm_hdr->reference_mode == SINGLE_REFERENCE) ? 0 : 1;
     uint32_t geom_offset_x = 0;
     uint32_t geom_offset_y = 0;
+    uint8_t inj_mv = 1;
+    int inside_tile = 1;
+    MacroBlockD  *xd = context_ptr->cu_ptr->av1xd;
+    int umv0tile = (sequence_control_set_ptr->static_config.unrestricted_motion_vector == 0);
 
     if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
         uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
@@ -2396,7 +2464,11 @@ void  inject_inter_candidates(
             int16_t to_inject_mv_x = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[1] >> GM_TRANS_ONLY_PREC_DIFF);
             int16_t to_inject_mv_y = (int16_t)(picture_control_set_ptr->parent_pcs_ptr->global_motion[LAST_FRAME].wmmat[0] >> GM_TRANS_ONLY_PREC_DIFF);
             uint8_t to_inject_ref_type = svt_get_ref_frame_type(REF_LIST_0, 0/*list0_ref_index*/);
-            if (context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE) {
+            inj_mv = context_ptr->injected_mv_count_l0 == 0 || mrp_is_already_injected_mv_l0(context_ptr, to_inject_mv_x, to_inject_mv_y, to_inject_ref_type) == EB_FALSE;
+            if(umv0tile)
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x, to_inject_mv_y, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            inj_mv = inj_mv && inside_tile;
+            if (inj_mv) {
 
                 candidateArray[canTotalCnt].type = INTER_MODE;
 
@@ -2449,7 +2521,13 @@ void  inject_inter_candidates(
             rf[0] = svt_get_ref_frame_type(REF_LIST_0, 0/*list0_ref_index*/);
             rf[1] = svt_get_ref_frame_type(REF_LIST_1, 0/*list1_ref_index*/);
             uint8_t to_inject_ref_type = av1_ref_frame_type(rf);
-            if (context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE) {
+            inj_mv = context_ptr->injected_mv_count_bipred == 0 || mrp_is_already_injected_mv_bipred(context_ptr, to_inject_mv_x_l0, to_inject_mv_y_l0, to_inject_mv_x_l1, to_inject_mv_y_l1, to_inject_ref_type) == EB_FALSE;
+            if(umv0tile) {
+                inside_tile = is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize) &&
+                              is_inside_tile_boundary(&(xd->tile), to_inject_mv_x_l0, to_inject_mv_y_l1, mi_col, mi_row, context_ptr->blk_geom->bsize);
+            }
+            inj_mv = inj_mv && inside_tile;
+            if (inj_mv) {
 
                 candidateArray[canTotalCnt].type = INTER_MODE;
                 candidateArray[canTotalCnt].distortion_ready = 0;
