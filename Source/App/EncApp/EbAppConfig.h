@@ -10,19 +10,13 @@
 
 #include "EbSvtAv1Enc.h"
 
-#ifdef __GNUC__
-#define fseeko64 fseek
-#define ftello64 ftell
+#ifdef _WIN32
+typedef __int64 off64_t;
+#define fseeko _fseeki64
+#define ftello _ftelli64
 #endif
 // Define Cross-Platform 64-bit fseek() and ftell()
-#ifdef _MSC_VER
-typedef __int64 off64_t;
-#define fseeko64 _fseeki64
-#define ftello64 _ftelli64
 
-#elif _WIN32 // MinGW
-
-#endif
 
 /** The AppExitConditionType type is used to define the App main loop exit
 conditions.
@@ -126,7 +120,7 @@ extern    uint32_t                   app_malloc_count;
 #define MAX_CHANNEL_NUMBER      6
 #define MAX_NUM_TOKENS          200
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define FOPEN(f,s,m) fopen_s(&f,s,m)
 #else
 #define FOPEN(f,s,m) f=fopen(s,m)
@@ -156,6 +150,11 @@ typedef struct EbPerformanceContext {
     double                    sum_luma_psnr;
     double                    sum_cr_psnr;
     double                    sum_cb_psnr;
+
+    double                    sum_luma_sse;
+    double                    sum_cr_sse;
+    double                    sum_cb_sse;
+
     uint64_t                  sum_qp;
 
 }EbPerformanceContext;

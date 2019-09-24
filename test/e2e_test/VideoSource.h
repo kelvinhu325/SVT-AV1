@@ -85,9 +85,12 @@ class VideoSource {
     }
 
   protected:
-    bool is_10bit_mode();
-    void deinit_frame_buffer();
     virtual EbErrorType init_frame_buffer();
+    void deinit_frame_buffer();
+    bool is_10bit_mode();
+    void cal_yuv_plane_param();
+
+  protected:
     uint32_t width_;
     uint32_t height_;
     uint32_t width_with_padding_;
@@ -101,6 +104,9 @@ class VideoSource {
     VideoColorFormat image_format_;
     bool svt_compressed_2bit_plane_;
     std::vector<uint32_t> frame_qp_list_;
+    int width_downsize_;
+    int height_downsize_;
+    int bytes_per_sample_;
 };
 
 /**
@@ -133,11 +139,12 @@ class VideoFileSource : public VideoSource {
 
   protected:
     virtual uint32_t read_input_frame();
-
     /*!\brief Sub class need to implement this function, file_frames_ and
      * frame_length_ must be init in this function. */
     virtual EbErrorType parse_file_info() = 0;
     virtual EbErrorType seek_to_frame(const uint32_t index) = 0;
+
+  protected:
     std::string file_name_;
     FILE *file_handle_;
     uint32_t file_length_;

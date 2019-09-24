@@ -339,7 +339,7 @@ config_entry_t config_entry[] = {
     { SINGLE_INPUT, SEARCH_AREA_WIDTH_TOKEN, "SearchAreaWidth", SetCfgSearchAreaWidth },
     { SINGLE_INPUT, SEARCH_AREA_HEIGHT_TOKEN, "SearchAreaHeight", SetCfgSearchAreaHeight },
     // HME Parameters
-    { SINGLE_INPUT, NUM_HME_SEARCH_WIDTH_TOKEN, "number_hme_search_region_in_width", SetCfgNumberHmeSearchRegionInWidth },
+    { SINGLE_INPUT, NUM_HME_SEARCH_WIDTH_TOKEN, "NumberHmeSearchRegionInWidth", SetCfgNumberHmeSearchRegionInWidth },
     { SINGLE_INPUT, NUM_HME_SEARCH_HEIGHT_TOKEN, "NumberHmeSearchRegionInHeight", SetCfgNumberHmeSearchRegionInHeight },
     { SINGLE_INPUT, HME_SRCH_T_L0_WIDTH_TOKEN, "HmeLevel0TotalSearchAreaWidth", SetCfgHmeLevel0TotalSearchAreaWidth },
     { SINGLE_INPUT, HME_SRCH_T_L0_HEIGHT_TOKEN, "HmeLevel0TotalSearchAreaHeight", SetCfgHmeLevel0TotalSearchAreaHeight },
@@ -428,7 +428,7 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->max_qp_allowed                       = 63;
     config_ptr->min_qp_allowed                       = 10;
 
-    config_ptr->enable_adaptive_quantization         = EB_FALSE;
+    config_ptr->enable_adaptive_quantization         = 2;
     config_ptr->base_layer_switch_mode               = 0;
     config_ptr->enc_mode                              = MAX_ENC_PRESET;
     config_ptr->intra_period                          = -2;
@@ -511,6 +511,9 @@ void eb_config_ctor(EbConfig *config_ptr)
     config_ptr->performance_context.sum_luma_psnr       = 0;
     config_ptr->performance_context.sum_cr_psnr         = 0;
     config_ptr->performance_context.sum_cb_psnr         = 0;
+    config_ptr->performance_context.sum_luma_sse        = 0;
+    config_ptr->performance_context.sum_cr_sse          = 0;
+    config_ptr->performance_context.sum_cb_sse          = 0;
     config_ptr->performance_context.sum_qp              = 0;
 
     // ASM Type
@@ -915,10 +918,10 @@ uint32_t get_help(
     if (FindToken(argc, argv, HELP_TOKEN, config_string) == 0) {
         int32_t token_index = -1;
 
-        printf("\n%-25s\t%-25s\t%-25s\t\n\n" ,"TOKEN", "DESCRIPTION", "INPUT TYPE");
-        printf("%-25s\t%-25s\t%-25s\t\n" ,"-nch", "NumberOfChannels", "Single input");
+        printf("\n%-25s\t%-25s\t%s\n\n" ,"TOKEN", "DESCRIPTION", "INPUT TYPE");
+        printf("%-25s\t%-25s\t%s\n" ,"-nch", "NumberOfChannels", "Single input");
         while (config_entry[++token_index].token != NULL)
-            printf("%-25s\t%-25s\t%-25s\t\n", config_entry[token_index].token, config_entry[token_index].name, config_entry[token_index].type ? "Array input": "Single input");
+            printf("%-25s\t%-25s\t%s\n", config_entry[token_index].token, config_entry[token_index].name, config_entry[token_index].type ? "Array input": "Single input");
         return 1;
     }
     else
@@ -983,10 +986,10 @@ int32_t ComputeFramesToBeEncoded(
     uint64_t currLoc;
 
     if (config->input_file) {
-        currLoc = ftello64(config->input_file); // get current fp location
-        fseeko64(config->input_file, 0L, SEEK_END);
-        fileSize = ftello64(config->input_file);
-        fseeko64(config->input_file, currLoc, SEEK_SET); // seek back to that location
+        currLoc = ftello(config->input_file); // get current fp location
+        fseeko(config->input_file, 0L, SEEK_END);
+        fileSize = ftello(config->input_file);
+        fseeko(config->input_file, currLoc, SEEK_SET); // seek back to that location
     }
 
     frameSize = config->input_padded_width * config->input_padded_height; // Luma

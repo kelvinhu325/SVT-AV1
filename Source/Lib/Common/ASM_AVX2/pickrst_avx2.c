@@ -16,6 +16,7 @@
 #include "EbPictureOperators_AVX2.h"
 #include "EbRestoration.h"
 #include "EbRestorationPick.h"
+#include "EbUtility.h"
 #include "pickrst_avx2.h"
 #include "transpose_sse2.h"
 #include "transpose_avx2.h"
@@ -3341,13 +3342,10 @@ static INLINE void compute_stats_win7_avx2(
     } while (++i < wiener_win);
 }
 
-void *aom_memalign(size_t align, size_t size);
-void aom_free(void *memblk);
-
-void av1_compute_stats_avx2(int32_t wiener_win, const uint8_t *dgd,
-                            const uint8_t *src, int32_t h_start, int32_t h_end,
-                            int32_t v_start, int32_t v_end, int32_t dgd_stride,
-                            int32_t src_stride, int64_t *M, int64_t *H) {
+void eb_av1_compute_stats_avx2(int32_t wiener_win, const uint8_t *dgd,
+    const uint8_t *src, int32_t h_start, int32_t h_end, int32_t v_start,
+    int32_t v_end, int32_t dgd_stride, int32_t src_stride, int64_t *M,
+    int64_t *H) {
     const int32_t wiener_win2 = wiener_win * wiener_win;
     const int32_t wiener_halfwin = wiener_win >> 1;
     const uint8_t avg =
@@ -3362,7 +3360,7 @@ void av1_compute_stats_avx2(int32_t wiener_win, const uint8_t *dgd,
     // (9 / 4) * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX. Enlarge to
     // 3 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX considering
     // paddings.
-    d = aom_memalign(32,
+    d = eb_aom_memalign(32,
             sizeof(*d) * 6 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX);
     s = d + 3 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX;
 
@@ -3400,10 +3398,10 @@ void av1_compute_stats_avx2(int32_t wiener_win, const uint8_t *dgd,
     // We can copy it down to the lower triangle outside the (i, j) loops.
     diagonal_copy_stats_avx2(wiener_win2, H);
 
-    aom_free(d);
+    eb_aom_free(d);
 }
 
-void av1_compute_stats_highbd_avx2(int32_t wiener_win, const uint8_t *dgd8,
+void eb_av1_compute_stats_highbd_avx2(int32_t wiener_win, const uint8_t *dgd8,
                                    const uint8_t *src8, int32_t h_start,
                                    int32_t h_end, int32_t v_start,
                                    int32_t v_end, int32_t dgd_stride,
@@ -3428,7 +3426,7 @@ void av1_compute_stats_highbd_avx2(int32_t wiener_win, const uint8_t *dgd8,
     // (9 / 4) * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX. Enlarge to
     // 3 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX considering
     // paddings.
-    d = aom_memalign(32,
+    d = eb_aom_memalign(32,
             sizeof(*d) * 6 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX);
     s = d + 3 * RESTORATION_UNITSIZE_MAX * RESTORATION_UNITSIZE_MAX;
 
@@ -3504,7 +3502,7 @@ void av1_compute_stats_highbd_avx2(int32_t wiener_win, const uint8_t *dgd8,
         div16_diagonal_copy_stats_avx2(wiener_win2, H);
     }
 
-    aom_free(d);
+    eb_aom_free(d);
 }
 
 static INLINE __m256i pair_set_epi16(uint16_t a, uint16_t b) {
@@ -3512,7 +3510,7 @@ static INLINE __m256i pair_set_epi16(uint16_t a, uint16_t b) {
         (int32_t)(((uint16_t)(a)) | (((uint32_t)(b)) << 16)));
 }
 
-int64_t av1_lowbd_pixel_proj_error_avx2(
+int64_t eb_av1_lowbd_pixel_proj_error_avx2(
     const uint8_t *src8, int32_t width, int32_t height, int32_t src_stride,
     const uint8_t *dat8, int32_t dat_stride, int32_t *flt0, int32_t flt0_stride,
     int32_t *flt1, int32_t flt1_stride, int32_t xq[2], const SgrParamsType *params) {
@@ -3647,7 +3645,7 @@ int64_t av1_lowbd_pixel_proj_error_avx2(
     return err;
 }
 
-int64_t av1_highbd_pixel_proj_error_avx2(
+int64_t eb_av1_highbd_pixel_proj_error_avx2(
     const uint8_t *src8, int32_t width, int32_t height, int32_t src_stride,
     const uint8_t *dat8, int32_t dat_stride, int32_t *flt0, int32_t flt0_stride,
     int32_t *flt1, int32_t flt1_stride, int32_t xq[2], const SgrParamsType *params) {

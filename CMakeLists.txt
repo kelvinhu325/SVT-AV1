@@ -11,7 +11,7 @@ if("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
                     "Please use the Build folder or create your own.")
 endif()
 
-if(NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE AND NOT (MSVC OR CMAKE_GENERATOR STREQUAL "Xcode"))
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
@@ -68,15 +68,19 @@ set(flags_to_test
     -Wextra
     -Wformat
     -Wformat-security
-    -fstack-protector-strong
     -fPIE
     -fPIC
     -D_FORTIFY_SOURCE=2)
 if(NOT MSVC)
     list(INSERT flags_to_test 0 -Wall)
-        option(NATIVE "Build for native performance (march=native)" ON)
+        option(NATIVE "Build for native performance (march=native)")
         if(NATIVE)
         list(APPEND flags_to_test -march=native)
+    endif()
+    if(MINGW)
+        list(APPEND flags_to_test -mxsave)
+    else()
+        list(APPEND flags_to_test -fstack-protector-strong)
     endif()
 else()
     list(APPEND flags_to_test /MP)

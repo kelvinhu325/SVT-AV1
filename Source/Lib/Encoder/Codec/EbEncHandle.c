@@ -110,72 +110,9 @@ typedef struct logicalProcessorGroup {
     uint32_t num;
     uint32_t group[1024];
 }processorGroup;
-#define MAX_PROCESSOR_GROUP 16
-processorGroup                   lp_group[MAX_PROCESSOR_GROUP];
+#define INITIAL_PROCESSOR_GROUP 16
+processorGroup                  *lp_group = NULL;
 #endif
-
-/**************************************
-* Instruction Set Support
-**************************************/
-
-#if defined(_MSC_VER)
-# include <intrin.h>
-#endif
-// Helper Functions
-void RunCpuid(uint32_t eax, uint32_t ecx, int32_t* abcd)
-{
-#if defined(_MSC_VER)
-    __cpuidex(abcd, eax, ecx);
-#else
-    uint32_t ebx = 0, edx = 0;
-# if defined( __i386__ ) && defined ( __PIC__ )
-    /* in case of PIC under 32-bit EBX cannot be clobbered */
-    __asm__("movl %%ebx, %%edi \n\t cpuid \n\t xchgl %%ebx, %%edi" : "=D" (ebx),
-# else
-    __asm__("cpuid" : "+b" (ebx),
-# endif
-        "+a" (eax), "+c" (ecx), "=d" (edx));
-    abcd[0] = eax; abcd[1] = ebx; abcd[2] = ecx; abcd[3] = edx;
-#endif
-}
-int32_t CheckXcr0Ymm()
-{
-    uint32_t xcr0;
-#if defined(_MSC_VER)
-    xcr0 = (uint32_t)_xgetbv(0);  /* min VS2010 SP1 compiler is required */
-#else
-    __asm__("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx");
-#endif
-    return ((xcr0 & 6) == 6); /* checking if xmm and ymm state are enabled in XCR0 */
-}
-int32_t Check4thGenIntelCoreFeatures()
-{
-    int32_t abcd[4];
-    int32_t fma_movbe_osxsave_mask = ((1 << 12) | (1 << 22) | (1 << 27));
-    int32_t avx2_bmi12_mask = (1 << 5) | (1 << 3) | (1 << 8);
-
-    /* CPUID.(EAX=01H, ECX=0H):ECX.FMA[bit 12]==1   &&
-       CPUID.(EAX=01H, ECX=0H):ECX.MOVBE[bit 22]==1 &&
-       CPUID.(EAX=01H, ECX=0H):ECX.OSXSAVE[bit 27]==1 */
-    RunCpuid(1, 0, abcd);
-    if ((abcd[2] & fma_movbe_osxsave_mask) != fma_movbe_osxsave_mask)
-        return 0;
-
-    if (!CheckXcr0Ymm())
-        return 0;
-
-    /*  CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5]==1  &&
-        CPUID.(EAX=07H, ECX=0H):EBX.BMI1[bit 3]==1  &&
-        CPUID.(EAX=07H, ECX=0H):EBX.BMI2[bit 8]==1  */
-    RunCpuid(7, 0, abcd);
-    if ((abcd[1] & avx2_bmi12_mask) != avx2_bmi12_mask)
-        return 0;
-    /* CPUID.(EAX=80000001H):ECX.LZCNT[bit 5]==1 */
-    RunCpuid(0x80000001, 0, abcd);
-    if ((abcd[2] & (1 << 5)) == 0)
-        return 0;
-    return 1;
-}
 static int32_t CanUseIntelCore4thGenFeatures()
 {
     static int32_t the_4th_gen_features_available = -1;
@@ -217,11 +154,12 @@ EbErrorType InitThreadManagmentParams() {
     const char* PHYSICALID = "physical id";
     int processor_id_len = EB_STRLEN(PROCESSORID, 128);
     int physical_id_len = EB_STRLEN(PHYSICALID, 128);
+    int maxSize = INITIAL_PROCESSOR_GROUP;
     if (processor_id_len < 0 || processor_id_len >= 128)
         return EB_ErrorInsufficientResources;
     if (physical_id_len < 0 || physical_id_len >= 128)
         return EB_ErrorInsufficientResources;
-    memset(lp_group, 0, sizeof(lp_group));
+    memset(lp_group, 0, INITIAL_PROCESSOR_GROUP * sizeof(processorGroup));
 
     FILE *fin = fopen("/proc/cpuinfo", "r");
     if (fin) {
@@ -237,12 +175,18 @@ EbErrorType InitThreadManagmentParams() {
                 char* p = line + physical_id_len;
                 while(*p < '0' || *p > '9') p++;
                 socket_id = strtol(p, NULL, 0);
-                if (socket_id < 0 || socket_id > 15) {
+                if (socket_id < 0) {
                     fclose(fin);
                     return EB_ErrorInsufficientResources;
                 }
                 if (socket_id + 1 > num_groups)
                     num_groups = socket_id + 1;
+                if (socket_id >= maxSize) {
+                    maxSize = maxSize * 2;
+                    lp_group = realloc(lp_group, maxSize * sizeof(processorGroup));
+                    if (lp_group == NULL)
+                        return EB_ErrorInsufficientResources;
+                }
                 lp_group[socket_id].group[lp_group[socket_id].num++] = processor_id;
             }
         }
@@ -345,7 +289,7 @@ void asmSetConvolveAsmTable(void);
 void asmSetConvolveHbdAsmTable(void);
 void init_intra_dc_predictors_c_internal(void);
 void init_intra_predictors_internal(void);
-void av1_init_me_luts(void);
+void eb_av1_init_me_luts(void);
 
 void SwitchToRealTime(){
 #if defined(__linux__) || defined(__APPLE__)
@@ -870,7 +814,7 @@ EbErrorType RestResultsCreator(
 }
 
 void init_fn_ptr(void);
-
+extern void av1_init_wedge_masks(void);
 /**********************************
 * Initialize Encoder Library
 **********************************/
@@ -910,9 +854,9 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 
     build_blk_geom(scs_init.sb_size == 128);
 
-    av1_init_me_luts();
+    eb_av1_init_me_luts();
     init_fn_ptr();
-
+    av1_init_wedge_masks();
     /************************************
     * Sequence Control Set
     ************************************/
@@ -1006,12 +950,14 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
         inputData.top_padding = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->top_padding;
         inputData.bot_padding = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->bot_padding;
         inputData.bit_depth = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->encoder_bit_depth;
+        inputData.film_grain_noise_level = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->film_grain_denoise_strength;
         inputData.color_format = color_format;
         inputData.sb_sz = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->sb_sz;
         inputData.sb_size_pix = scs_init.sb_size;
         inputData.max_depth = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->max_sb_depth;
         inputData.hbd_mode_decision = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->static_config.enable_hbd_mode_decision;
         inputData.cdf_mode = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->cdf_mode;
+        inputData.mfmv = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->mfmv_enabled;
         EB_NEW(
             enc_handle_ptr->picture_control_set_pool_ptr_array[instance_index],
             eb_system_resource_ctor,
@@ -1066,6 +1012,7 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
         referencePictureBufferDescInitData.right_padding = PAD_VALUE;
         referencePictureBufferDescInitData.top_padding = PAD_VALUE;
         referencePictureBufferDescInitData.bot_padding = PAD_VALUE;
+        referencePictureBufferDescInitData.mfmv = enc_handle_ptr->sequence_control_set_instance_array[instance_index]->sequence_control_set_ptr->mfmv_enabled;
         // Hsan: split_mode is set @ eb_reference_object_ctor() as both unpacked reference and packed reference are needed for a 10BIT input; unpacked reference @ MD, and packed reference @ EP
 
         if (is16bit)
@@ -1313,7 +1260,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
     // Picture Demux Results
     {
         PictureResultInitData pictureResultInitData;
-#if ENABLE_CDF_UPDATE
         EB_NEW(
             enc_handle_ptr->picture_demux_results_resource_ptr,
             eb_system_resource_ctor,
@@ -1327,20 +1273,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
             &pictureResultInitData,
             NULL);
 
-#else
-        EB_NEW(
-            enc_handle_ptr->picture_demux_results_resource_ptr,
-            eb_system_resource_ctor,
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->picture_demux_fifo_init_count,
-            enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->source_based_operations_process_init_count + enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->rest_process_init_count,
-            EB_PictureManagerProcessInitCount,
-            &enc_handle_ptr->picture_demux_results_producer_fifo_ptr_array,
-            &enc_handle_ptr->picture_demux_results_consumer_fifo_ptr_array,
-            EB_TRUE,
-            picture_results_creator,
-            &pictureResultInitData,
-            NULL);
-#endif
     }
 
     // Rate Control Tasks
@@ -1527,6 +1459,7 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
 
     for (processIndex = 0; processIndex < enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->picture_analysis_process_init_count; ++processIndex) {
         EbPictureBufferDescInitData  pictureBufferDescConf;
+        pictureBufferDescConf.color_format = color_format;
         pictureBufferDescConf.max_width = enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_width;
         pictureBufferDescConf.max_height = enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->max_input_luma_height;
         pictureBufferDescConf.bit_depth = EB_8BIT;
@@ -1711,7 +1644,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
     }
 
     // Packetization Context
-#if ENABLE_CDF_UPDATE
     EB_NEW(
         enc_handle_ptr->packetization_context_ptr,
         packetization_context_ctor,
@@ -1720,14 +1652,6 @@ EB_API EbErrorType eb_init_encoder(EbComponentType *svt_enc_component)
         , enc_handle_ptr->picture_demux_results_producer_fifo_ptr_array[enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->source_based_operations_process_init_count +
         enc_handle_ptr->sequence_control_set_instance_array[0]->sequence_control_set_ptr->enc_dec_process_init_count]
     );
-#else
-    EB_NEW(
-        enc_handle_ptr->packetization_context_ptr,
-        packetization_context_ctor,
-        enc_handle_ptr->entropy_coding_results_consumer_fifo_ptr_array[0],
-        enc_handle_ptr->rate_control_tasks_producer_fifo_ptr_array[RateControlPortLookup(RATE_CONTROL_INPUT_PORT_PACKETIZATION, 0)]
-    );
-#endif
 
     /************************************
     * Thread Handles
@@ -1841,6 +1765,12 @@ EB_API EbErrorType eb_init_handle(
     if(p_handle == NULL)
          return EB_ErrorBadParameter;
 
+    #if defined(__linux__)
+        if(lp_group == NULL) {
+            EB_MALLOC(lp_group, INITIAL_PROCESSOR_GROUP * sizeof(processorGroup));
+        }
+    #endif
+
     *p_handle = (EbComponentType*)malloc(sizeof(EbComponentType));
     if (*p_handle == (EbComponentType*)NULL) {
         SVT_LOG("Error: Component Struct Malloc Failed\n");
@@ -1867,7 +1797,7 @@ EB_API EbErrorType eb_init_handle(
 /**********************************
 * Encoder Componenet DeInit
 **********************************/
-EbErrorType eb_h265_enc_component_de_init(EbComponentType  *svt_enc_component)
+EbErrorType eb_av1_enc_component_de_init(EbComponentType  *svt_enc_component)
 {
     EbErrorType       return_error = EB_ErrorNone;
 
@@ -1893,13 +1823,19 @@ EB_API EbErrorType eb_deinit_handle(
     EbErrorType return_error = EB_ErrorNone;
 
     if (svt_enc_component) {
-        return_error = eb_h265_enc_component_de_init(svt_enc_component);
+        return_error = eb_av1_enc_component_de_init(svt_enc_component);
 
         free(svt_enc_component);
         eb_decrease_component_count();
     }
     else
         return_error = EB_ErrorInvalidComponent;
+
+    #if  defined(__linux__)
+        if(lp_group != NULL) {
+            EB_FREE(lp_group);
+        }
+    #endif
     return return_error;
 }
 
@@ -1938,8 +1874,7 @@ void SetDefaultConfigurationParameters(
     sequence_control_set_ptr->cropping_top_offset = 0;
     sequence_control_set_ptr->cropping_bottom_offset = 0;
 
-    //Segmentation
-    sequence_control_set_ptr->static_config.enable_adaptive_quantization = 0;
+    sequence_control_set_ptr->static_config.enable_adaptive_quantization = 2;
 
     return;
 }
@@ -2002,14 +1937,6 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     sequence_control_set_ptr->max_input_chroma_width = sequence_control_set_ptr->max_input_luma_width >> subsampling_x;
     sequence_control_set_ptr->max_input_chroma_height = sequence_control_set_ptr->max_input_luma_height >> subsampling_y;
 
-    // Configure the padding
-#if !INCOMPLETE_SB_FIX
-    sequence_control_set_ptr->left_padding  = BLOCK_SIZE_64 + 4;
-    sequence_control_set_ptr->top_padding = BLOCK_SIZE_64 + 4;
-    sequence_control_set_ptr->right_padding = BLOCK_SIZE_64 + 4;
-    sequence_control_set_ptr->bot_padding = BLOCK_SIZE_64 + 4;
-#endif
-
     sequence_control_set_ptr->chroma_width = sequence_control_set_ptr->max_input_luma_width >> subsampling_x;
     sequence_control_set_ptr->chroma_height = sequence_control_set_ptr->max_input_luma_height >> subsampling_y;
     sequence_control_set_ptr->seq_header.max_frame_width = sequence_control_set_ptr->max_input_luma_width;
@@ -2020,16 +1947,18 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
     derive_input_resolution(
         sequence_control_set_ptr,
         sequence_control_set_ptr->seq_header.max_frame_width*sequence_control_set_ptr->seq_header.max_frame_height);
-    sequence_control_set_ptr->static_config.super_block_size       = (sequence_control_set_ptr->static_config.enc_mode == ENC_M0 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+    if (sequence_control_set_ptr->static_config.screen_content_mode == 1)
+        sequence_control_set_ptr->static_config.super_block_size = 64;
+    else
+        sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.enc_mode <= ENC_M3 && sequence_control_set_ptr->input_resolution >= INPUT_SIZE_1080i_RANGE) ? 128 : 64;
+
     sequence_control_set_ptr->static_config.super_block_size = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 64 : sequence_control_set_ptr->static_config.super_block_size;
    // sequence_control_set_ptr->static_config.hierarchical_levels = (sequence_control_set_ptr->static_config.rate_control_mode > 1) ? 3 : sequence_control_set_ptr->static_config.hierarchical_levels;
-#if INCOMPLETE_SB_FIX
     // Configure the padding
     sequence_control_set_ptr->left_padding = BLOCK_SIZE_64 + 4;
     sequence_control_set_ptr->top_padding = BLOCK_SIZE_64 + 4;
     sequence_control_set_ptr->right_padding = BLOCK_SIZE_64 + 4;
     sequence_control_set_ptr->bot_padding = sequence_control_set_ptr->static_config.super_block_size + 4;
-#endif
     sequence_control_set_ptr->static_config.enable_overlays = sequence_control_set_ptr->static_config.enable_altrefs == EB_FALSE ||
         (sequence_control_set_ptr->static_config.altref_nframes <= 1) ||
         (sequence_control_set_ptr->static_config.rate_control_mode > 0) ||
@@ -2054,7 +1983,6 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->down_sampling_method_me_search = ME_FILTERED_DOWNSAMPLED;
     else
         sequence_control_set_ptr->down_sampling_method_me_search = ME_DECIMATED_DOWNSAMPLED;
-#if INCOMPLETE_SB_FIX
     // Set over_boundary_block_mode     Settings
     // 0                            0: not allowed
     // 1                            1: allowed
@@ -2062,7 +1990,7 @@ void SetParamBasedOnInput(SequenceControlSet *sequence_control_set_ptr)
         sequence_control_set_ptr->over_boundary_block_mode = 1;
     else
         sequence_control_set_ptr->over_boundary_block_mode = 0;
-#endif
+    sequence_control_set_ptr->mfmv_enabled = (uint8_t)(sequence_control_set_ptr->static_config.enc_mode == ENC_M0) ? 1 : 0;
 }
 
 void CopyApiFromApp(
@@ -2542,9 +2470,8 @@ static EbErrorType VerifySettings(
         SVT_LOG("Error instance %u : Invalid screen_content_mode. screen_content_mode must be [0 - 2]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
-
-    if(sequence_control_set_ptr->static_config.enable_adaptive_quantization>1){
-        SVT_LOG("Error instance %u : Invalid enable_adaptive_quantization. enable_adaptive_quantization must be [0/1]\n", channelNumber + 1);
+    if (sequence_control_set_ptr->static_config.enable_adaptive_quantization > 2) {
+        SVT_LOG("Error instance %u : Invalid enable_adaptive_quantization. enable_adaptive_quantization must be [0-2]\n", channelNumber + 1);
         return_error = EB_ErrorBadParameter;
     }
 
@@ -2731,10 +2658,14 @@ static void print_lib_params(
     EbSvtAv1EncConfiguration*   config = &scs->static_config;
 
     SVT_LOG("------------------------------------------- ");
-    if (config->profile == 0)
+    if (config->profile == MAIN_PROFILE)
         SVT_LOG("\nSVT [config]: Main Profile\t");
+    else if (config->profile == HIGH_PROFILE)
+        SVT_LOG("\nSVT [config]: High Profile\t");
+    else if (config->profile == PROFESSIONAL_PROFILE)
+        SVT_LOG("\nSVT [config]: Professional Profile\t");
     else
-        SVT_LOG("\nSVT [config]: Main10 Profile\t");
+        SVT_LOG("\nSVT [config]: Unknown Profile\t");
 
     if (config->tier != 0 && config->level != 0)
         SVT_LOG("Tier %d\tLevel %.1f\t", config->tier, (float)(config->level / 10));

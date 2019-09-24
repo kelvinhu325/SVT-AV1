@@ -355,7 +355,7 @@ void high_level_rc_input_picture_vbr(
     // Queue variables
     uint32_t                     queue_entry_index_temp;
     uint32_t                     queue_entry_index_temp2;
-    uint32_t                     queue_entry_index_head_temp;
+    int64_t                      queue_entry_index_head_temp;
 
     uint64_t                     min_la_bit_distance;
     uint32_t                     selected_ref_qp_table_index;
@@ -442,9 +442,11 @@ void high_level_rc_input_picture_vbr(
             queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
             queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                 queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                (queue_entry_index_head_temp < 0) ?
+                queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                 queue_entry_index_head_temp;
 
-            queue_entry_index_temp = queue_entry_index_head_temp;
+            queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
             {
                 hl_rate_control_histogram_ptr_temp = (encode_context_ptr->hl_rate_control_historgram_queue[queue_entry_index_temp]);
 
@@ -547,9 +549,11 @@ void high_level_rc_input_picture_vbr(
                 queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                 queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                     queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                    (queue_entry_index_head_temp < 0) ?
+                    queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                     queue_entry_index_head_temp;
 
-                queue_entry_index_temp = queue_entry_index_head_temp;
+                queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
                 // This is set to false, so the last frame would go inside the loop
                 end_of_sequence_flag = EB_FALSE;
 
@@ -624,9 +628,11 @@ void high_level_rc_input_picture_vbr(
                 queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                 queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                     queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                    (queue_entry_index_head_temp < 0) ?
+                    queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                     queue_entry_index_head_temp;
 
-                queue_entry_index_temp = queue_entry_index_head_temp;
+                queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
 
                 // This is set to false, so the last frame would go inside the loop
                 end_of_sequence_flag = EB_FALSE;
@@ -678,9 +684,11 @@ void high_level_rc_input_picture_vbr(
                 queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                 queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                     queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                    (queue_entry_index_head_temp < 0) ?
+                    queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                     queue_entry_index_head_temp;
 
-                queue_entry_index_temp = queue_entry_index_head_temp;
+                queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
 
                 // This is set to false, so the last frame would go inside the loop
                 end_of_sequence_flag = EB_FALSE;
@@ -1655,7 +1663,7 @@ void high_level_rc_input_picture_cvbr(
     // Queue variables
     uint32_t                     queue_entry_index_temp;
     uint32_t                     queue_entry_index_temp2;
-    uint32_t                     queue_entry_index_head_temp;
+    int64_t                      queue_entry_index_head_temp;
 
     uint64_t                     min_la_bit_distance;
     uint32_t                     selected_ref_qp_table_index;
@@ -1744,9 +1752,11 @@ void high_level_rc_input_picture_cvbr(
             queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
             queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                 queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                (queue_entry_index_head_temp < 0) ?
+                queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                 queue_entry_index_head_temp;
 
-            queue_entry_index_temp = queue_entry_index_head_temp;
+            queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
             {
                 hl_rate_control_histogram_ptr_temp = (encode_context_ptr->hl_rate_control_historgram_queue[queue_entry_index_temp]);
 
@@ -1852,9 +1862,11 @@ void high_level_rc_input_picture_cvbr(
                     queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                     queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                         queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                        (queue_entry_index_head_temp < 0) ?
+                        queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                         queue_entry_index_head_temp;
 
-                    queue_entry_index_temp = queue_entry_index_head_temp;
+                    queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
                     // This is set to false, so the last frame would go inside the loop
                     end_of_sequence_flag = EB_FALSE;
 
@@ -1933,9 +1945,11 @@ void high_level_rc_input_picture_cvbr(
                 queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                 queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                     queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                    (queue_entry_index_head_temp < 0) ?
+                    queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                     queue_entry_index_head_temp;
 
-                queue_entry_index_temp = queue_entry_index_head_temp;
+                queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
 
                 // This is set to false, so the last frame would go inside the loop
                 end_of_sequence_flag = EB_FALSE;
@@ -1985,9 +1999,11 @@ void high_level_rc_input_picture_cvbr(
                 queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
                 queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
                     queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+                    (queue_entry_index_head_temp < 0) ?
+                    queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
                     queue_entry_index_head_temp;
 
-                queue_entry_index_temp = queue_entry_index_head_temp;
+                queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
 
                 // This is set to false, so the last frame would go inside the loop
                 end_of_sequence_flag = EB_FALSE;
@@ -2232,7 +2248,7 @@ void frame_level_rc_input_picture_cvbr(
         // Queue variables
         uint32_t                     queue_entry_index_temp;
         uint32_t                     queue_entry_index_temp2;
-        uint32_t                     queue_entry_index_head_temp;
+        int64_t                     queue_entry_index_head_temp;
 
         uint64_t                     min_la_bit_distance;
         uint32_t                     selected_ref_qp_table_index;
@@ -2271,6 +2287,8 @@ void frame_level_rc_input_picture_cvbr(
         queue_entry_index_head_temp += encode_context_ptr->hl_rate_control_historgram_queue_head_index;
         queue_entry_index_head_temp = (queue_entry_index_head_temp > HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH - 1) ?
             queue_entry_index_head_temp - HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
+            (queue_entry_index_head_temp < 0) ?
+            queue_entry_index_head_temp + HIGH_LEVEL_RATE_CONTROL_HISTOGRAM_QUEUE_MAX_DEPTH :
             queue_entry_index_head_temp;
 
         if (picture_control_set_ptr->parent_pcs_ptr->picture_number + picture_control_set_ptr->parent_pcs_ptr->frames_in_sw > rate_control_param_ptr->first_poc + sequence_control_set_ptr->static_config.intra_period_length + 1)
@@ -2295,7 +2313,7 @@ void frame_level_rc_input_picture_cvbr(
                 ref_qp_table_index);
             high_level_rate_control_ptr->pred_bits_ref_qpPerSw[ref_qp_index] = 0;
 
-            queue_entry_index_temp = queue_entry_index_head_temp;
+            queue_entry_index_temp = (uint32_t) queue_entry_index_head_temp;
             // This is set to false, so the last frame would go inside the loop
             end_of_sequence_flag = EB_FALSE;
 
@@ -3005,23 +3023,23 @@ void init_rc(
 #define MAX_Q_INDEX 255
 #define MIN_Q_INDEX 0
 
-extern int16_t av1_ac_quant_Q3(int32_t qindex, int32_t delta, AomBitDepth bit_depth);
+extern int16_t eb_av1_ac_quant_Q3(int32_t qindex, int32_t delta, AomBitDepth bit_depth);
 // These functions use formulaic calculations to make playing with the
 // quantizer tables easier. If necessary they can be replaced by lookup
 // tables if and when things settle down in the experimental bitstream
 
-double av1_convert_qindex_to_q(int32_t qindex, AomBitDepth bit_depth) {
+double eb_av1_convert_qindex_to_q(int32_t qindex, AomBitDepth bit_depth) {
     // Convert the index to a real Q value (scaled down to match old Q values)
     switch (bit_depth) {
-    case AOM_BITS_8: return av1_ac_quant_Q3(qindex, 0, bit_depth) / 4.0;
-    case AOM_BITS_10: return av1_ac_quant_Q3(qindex, 0, bit_depth) / 16.0;
-    case AOM_BITS_12: return av1_ac_quant_Q3(qindex, 0, bit_depth) / 64.0;
+    case AOM_BITS_8: return eb_av1_ac_quant_Q3(qindex, 0, bit_depth) / 4.0;
+    case AOM_BITS_10: return eb_av1_ac_quant_Q3(qindex, 0, bit_depth) / 16.0;
+    case AOM_BITS_12: return eb_av1_ac_quant_Q3(qindex, 0, bit_depth) / 64.0;
     default:
         assert(0 && "bit_depth should be AOM_BITS_8, AOM_BITS_10 or AOM_BITS_12");
         return -1.0;
     }
 }
-int32_t av1_compute_qdelta(double qstart, double qtarget,
+int32_t eb_av1_compute_qdelta(double qstart, double qtarget,
     AomBitDepth bit_depth) {
     int32_t start_index = MAX_Q_INDEX;
     int32_t target_index = MAX_Q_INDEX;
@@ -3030,13 +3048,13 @@ int32_t av1_compute_qdelta(double qstart, double qtarget,
     // Convert the average q value to an index.
     for (i = MIN_Q_INDEX; i < MAX_Q_INDEX; ++i) {
         start_index = i;
-        if (av1_convert_qindex_to_q(i, bit_depth) >= qstart) break;
+        if (eb_av1_convert_qindex_to_q(i, bit_depth) >= qstart) break;
     }
 
     // Convert the q target to an index
     for (i = MIN_Q_INDEX; i < MAX_Q_INDEX; ++i) {
         target_index = i;
-        if (av1_convert_qindex_to_q(i, bit_depth) >= qtarget) break;
+        if (eb_av1_convert_qindex_to_q(i, bit_depth) >= qtarget) break;
     }
 
     return target_index - start_index;
@@ -3057,17 +3075,17 @@ uint32_t qp_scaling_calc(
     { 0.35, 0.6, 0.8,  0.9, 1.0, 1.0 } };
 
     int qindex = quantizer_to_qindex[base_qp];
-    const double q = av1_convert_qindex_to_q(qindex, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
+    const double q = eb_av1_convert_qindex_to_q(qindex, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
     int delta_qindex;
 
     if (slice_type == I_SLICE) {
-        delta_qindex = av1_compute_qdelta(
+        delta_qindex = eb_av1_compute_qdelta(
             q,
             q* 0.25,
             (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
     }
     else {
-        delta_qindex = av1_compute_qdelta(
+        delta_qindex = eb_av1_compute_qdelta(
             q,
             q* delta_rate_new[sequence_control_set_ptr->static_config.hierarchical_levels == 4][temporal_layer_index], // RC does not support 5L
             //q* delta_rate_new[0][temporal_layer_index], // RC does not support 5L
@@ -3202,20 +3220,14 @@ enum {
 
 // that are not marked as coded with 0,0 motion in the first pass.
 #define FAST_MOVING_KF_GROUP_THRESH 5
-#if QPS_TUNING
 #define MEDIUM_MOVING_KF_GROUP_THRESH  30
-#define STATIC_KF_GROUP_THRESH         80
-#define MAX_QPS_COMP_I                100
+#define STATIC_KF_GROUP_THRESH         70
+#define MAX_QPS_COMP_I                150
 #define MAX_QPS_COMP_NONI             300
 #define HIGH_QPS_COMP_THRESHOLD        80
 #define LOW_QPS_COMP_THRESHOLD         40
 #define HIGH_FILTERED_THRESHOLD     (4<<8) // 8 bit precision
-#define LOW_FILTERED_THRESHOLD      (1<<8) // 8 bit precision
-#else
-#define STATIC_KF_GROUP_THRESH 99
-#define MAX_QPS_COMP_I        60
-#define MAX_QPS_COMP_NONI    200
-#endif
+#define LOW_FILTERED_THRESHOLD      (2<<8) // 8 bit precision
 #define QPS_SW_THRESH          8
 
 #define ASSIGN_MINQ_TABLE(bit_depth, name)                   \
@@ -3272,7 +3284,7 @@ static int get_minq_index(double maxq, double x3, double x2, double x1,
     if (minqtarget <= 2.0) return 0;
 
     for (i = 0; i < QINDEX_RANGE; i++)
-        if (minqtarget <= av1_convert_qindex_to_q(i, bit_depth)) return i;
+        if (minqtarget <= eb_av1_convert_qindex_to_q(i, bit_depth)) return i;
     return QINDEX_RANGE - 1;
 }
 
@@ -3281,7 +3293,7 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m, int *arfgf_low,
     AomBitDepth bit_depth) {
     int i;
     for (i = 0; i < QINDEX_RANGE; i++) {
-        const double maxq = av1_convert_qindex_to_q(i, bit_depth);
+        const double maxq = eb_av1_convert_qindex_to_q(i, bit_depth);
         kf_low_m[i] = get_minq_index(maxq, 0.000001, -0.0004, 0.150, bit_depth);
         kf_high_m[i] = get_minq_index(maxq, 0.0000021, -0.00125, 0.45, bit_depth);
         arfgf_low[i] = get_minq_index(maxq, 0.0000015, -0.0009, 0.30, bit_depth);
@@ -3291,7 +3303,7 @@ static void init_minq_luts(int *kf_low_m, int *kf_high_m, int *arfgf_low,
     }
 }
 
-void av1_rc_init_minq_luts(void) {
+void eb_av1_rc_init_minq_luts(void) {
     init_minq_luts(kf_low_motion_minq_8, kf_high_motion_minq_8,
         arfgf_low_motion_minq_8, arfgf_high_motion_minq_8,
         inter_minq_8, rtc_minq_8, AOM_BITS_8);
@@ -3382,27 +3394,20 @@ static int adaptive_qindex_calc(
 
         rc->worst_quality = MAXQ;
         rc->best_quality = MINQ;
-        int max_qp_scaling_avg_comp_I = sequence_control_set_ptr->input_resolution < 2 ? (MAX_QPS_COMP_I >> 1) : MAX_QPS_COMP_I;
-#if QPS_TUNING
-        // Update the complexity for very fast moving content.
-        if (picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct <= FAST_MOVING_KF_GROUP_THRESH)
+        int max_qp_scaling_avg_comp_I = sequence_control_set_ptr->input_resolution < 2 ? (MAX_QPS_COMP_I / 3) :
+            picture_control_set_ptr->parent_pcs_ptr->sc_content_detected ? (MAX_QPS_COMP_I >> 1) : (MAX_QPS_COMP_I);
+        // Clip the complexity of highly complex pictures to maximum.
+        if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = max_qp_scaling_avg_comp_I;
-
         // For the low filtered ALT_REF pictures (next ALT_REF) where complexity is low and picture is static, decrease the complexity/QP of the I_SLICE.
         // The improved area will be propagated to future frames
         if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity <= LOW_QPS_COMP_THRESHOLD &&
             picture_control_set_ptr->parent_pcs_ptr->filtered_sse < LOW_FILTERED_THRESHOLD && picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv < LOW_FILTERED_THRESHOLD &&
             picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct > STATIC_KF_GROUP_THRESH)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity >>= 1;
-
         // For the highly filtered ALT_REF pictures (next ALT_REF), increase the complexity/QP of the I_SLICE to save on rate
-        if (picture_control_set_ptr->parent_pcs_ptr->filtered_sse + picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv >= HIGH_FILTERED_THRESHOLD)
+        if (picture_control_set_ptr->parent_pcs_ptr->filtered_sse + picture_control_set_ptr->parent_pcs_ptr->filtered_sse_uv >= (7 << 8))
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = max_qp_scaling_avg_comp_I;
-#else
-        // Update the complexity for very fast moving content
-        if (picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct <= FAST_MOVING_KF_GROUP_THRESH)
-            picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity <<= 1;
-#endif
         picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = MIN(max_qp_scaling_avg_comp_I, picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity);
 
         // cross multiplication to derive kf_boost from non_moving_average_score; kf_boost range is [kf_low,kf_high], and non_moving_average_score range [0,max_qp_scaling_avg_comp_I]
@@ -3418,27 +3423,21 @@ static int adaptive_qindex_calc(
 
         // Convert the adjustment factor to a qindex delta
         // on active_best_quality.
-        q_val = av1_convert_qindex_to_q(active_best_quality, bit_depth);
+        q_val = eb_av1_convert_qindex_to_q(active_best_quality, bit_depth);
         active_best_quality +=
-            av1_compute_qdelta(q_val, q_val * q_adj_factor, bit_depth);
+            eb_av1_compute_qdelta(q_val, q_val * q_adj_factor, bit_depth);
     }
     else if (!is_src_frame_alt_ref &&
         (refresh_golden_frame || is_intrl_arf_boost ||
             refresh_alt_ref_frame)) {
-#if QPS_TUNING
         // Clip the complexity of highly complex pictures to maximum.
         if (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > HIGH_QPS_COMP_THRESHOLD)
             picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity = MAX_QPS_COMP_NONI;
-#endif
         rc->gfu_boost = (((MAX_QPS_COMP_NONI - (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity))  * (gf_high - gf_low)) / MAX_QPS_COMP_NONI) + gf_low;
-#if QPS_TUNING
         // For the highly filtered ALT_REF pictures or where complexity is medium or picture is medium moving, add a boost to decrease the QP of the ALT_REF.
         // The improved area will be propagated to future frames
         rc->arf_boost_factor = (picture_control_set_ptr->parent_pcs_ptr->qp_scaling_average_complexity > LOW_QPS_COMP_THRESHOLD || picture_control_set_ptr->parent_pcs_ptr->kf_zeromotion_pct < MEDIUM_MOVING_KF_GROUP_THRESH || picture_control_set_ptr->parent_pcs_ptr->filtered_sse >= HIGH_FILTERED_THRESHOLD) ?
             (float_t)1.3 : 1;
-#else
-        rc->arf_boost_factor = 1;
-#endif
         q = active_worst_quality;
 
         // non ref frame or repeated frames with re-encode
@@ -3469,7 +3468,109 @@ static int adaptive_qindex_calc(
 
     return q;
 }
+// Calculates the QP per SB based on the non moving index. For now, only active for I Slice.
+static void sb_qp_derivation(
+    PictureControlSet         *picture_control_set_ptr) {
 
+    SequenceControlSet        *sequence_control_set_ptr = picture_control_set_ptr->parent_pcs_ptr->sequence_control_set_ptr;
+    LargestCodingUnit         *sb_ptr;
+    uint32_t                  sb_addr;
+    RATE_CONTROL               rc;
+    picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
+    if (sequence_control_set_ptr->static_config.enable_adaptive_quantization == 2 && picture_control_set_ptr->slice_type == 2 &&
+        picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH && !picture_control_set_ptr->parent_pcs_ptr->sc_content_detected)
+        picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present = 1;
+    else
+        picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present = 0;
+
+    if (picture_control_set_ptr->parent_pcs_ptr->frm_hdr.delta_q_params.delta_q_present) {
+        const int bit_depth = sequence_control_set_ptr->static_config.encoder_bit_depth;
+        int active_best_quality = 0;
+        int active_worst_quality = quantizer_to_qindex[(uint8_t)sequence_control_set_ptr->qp];
+        int *kf_low_motion_minq;
+        int *kf_high_motion_minq;
+        ASSIGN_MINQ_TABLE(bit_depth, kf_low_motion_minq);
+        ASSIGN_MINQ_TABLE(bit_depth, kf_high_motion_minq);
+        double q_val, picture_q_val;
+        uint32_t me_sb_size = sequence_control_set_ptr->sb_sz;
+        uint32_t me_pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / me_sb_size;
+        uint32_t me_pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + me_sb_size - 1) / me_sb_size;
+        int max_qp_scaling_avg_comp =
+            MAX(1, picture_control_set_ptr->parent_pcs_ptr->non_moving_index_min_distance + picture_control_set_ptr->parent_pcs_ptr->non_moving_index_max_distance);
+        // Calculate the QP per frames
+        rc.kf_boost = (((max_qp_scaling_avg_comp - picture_control_set_ptr->parent_pcs_ptr->non_moving_index_average)  * (kf_high - kf_low))
+                       / max_qp_scaling_avg_comp) + kf_low;
+        active_best_quality =
+            get_kf_active_quality(&rc, active_worst_quality, bit_depth);
+        // Convert the adjustment factor to a qindex delta
+        // on active_best_quality.
+        picture_q_val = eb_av1_convert_qindex_to_q(active_best_quality, bit_depth);
+        for (sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr) {
+            sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_addr];
+            int delta_qp = 0;
+            SbParams *sb_params = &sequence_control_set_ptr->sb_params_array[sb_addr];
+            uint8_t non_moving_index_sb;
+            uint16_t variance_sb;
+            if (sequence_control_set_ptr->seq_header.sb_size == BLOCK_128X128) {
+                uint32_t me_sb_x = (sb_ptr->origin_x / me_sb_size);
+                uint32_t me_sb_y = (sb_ptr->origin_y / me_sb_size);
+                uint32_t me_sb_addr_0 = me_sb_x + me_sb_y * me_pic_width_in_sb;
+                uint32_t me_sb_addr_1 = (me_sb_x + 1) < me_pic_width_in_sb ? (me_sb_x + 1) + ((me_sb_y + 0) * me_pic_width_in_sb) : me_sb_addr_0;
+                uint32_t me_sb_addr_2 = (me_sb_y + 1) < me_pic_height_in_sb ? (me_sb_x + 0) + ((me_sb_y + 1) * me_pic_width_in_sb) : me_sb_addr_0;
+                uint32_t me_sb_addr_3 = ((me_sb_x + 1) < me_pic_width_in_sb) && ((me_sb_y + 1) < me_pic_height_in_sb) ?
+                    (me_sb_x + 1) + ((me_sb_y + 1) * me_pic_width_in_sb) : me_sb_addr_0;
+                non_moving_index_sb =
+                    (picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[me_sb_addr_0] +
+                        picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[me_sb_addr_1] +
+                        picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[me_sb_addr_2] +
+                        picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[me_sb_addr_3] + 2) >> 2;
+                variance_sb =
+                    (picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_0][ME_TIER_ZERO_PU_64x64] +
+                        picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_1][ME_TIER_ZERO_PU_64x64] +
+                        picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_2][ME_TIER_ZERO_PU_64x64] +
+                        picture_control_set_ptr->parent_pcs_ptr->variance[me_sb_addr_3][ME_TIER_ZERO_PU_64x64] + 2) >> 2;
+            }
+            else {
+                non_moving_index_sb = picture_control_set_ptr->parent_pcs_ptr->non_moving_index_array[sb_addr];
+                variance_sb = picture_control_set_ptr->parent_pcs_ptr->variance[sb_addr][ME_TIER_ZERO_PU_64x64];
+            }
+            if (sb_params->is_complete_sb && max_qp_scaling_avg_comp >= 10 && picture_control_set_ptr->parent_pcs_ptr->non_moving_index_average < 20 &&
+                non_moving_index_sb < picture_control_set_ptr->parent_pcs_ptr->non_moving_index_average) {
+                if (variance_sb < IS_COMPLEX_LCU_FLAT_VARIANCE_TH)
+                    delta_qp = 3;
+                else {
+                    // Calculate the QP of each block to find the delta
+                    rc.kf_boost = (((max_qp_scaling_avg_comp - non_moving_index_sb)  * (kf_high - kf_low)) / max_qp_scaling_avg_comp) + kf_low;
+                    // Baseline value derived from cpi->active_worst_quality and kf boost.
+                    active_best_quality =
+                        get_kf_active_quality(&rc, active_worst_quality, bit_depth);
+                    // Convert the adjustment factor to a qindex delta
+                    // on active_best_quality.
+                    q_val = eb_av1_convert_qindex_to_q(active_best_quality, bit_depth);
+                    delta_qp = (int16_t)q_val - (int16_t)picture_q_val;
+                }
+            }
+            sb_ptr->qp = CLIP3(
+                MIN(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_low_motion_minq[active_worst_quality] + 2) >> 2)),
+                MAX(picture_control_set_ptr->parent_pcs_ptr->picture_qp, ((kf_high_motion_minq[active_worst_quality] + 2) >> 2)) + 3,
+                ((int16_t)picture_control_set_ptr->parent_pcs_ptr->picture_qp + (int16_t)delta_qp));
+            sb_ptr->qp = CLIP3(
+                sequence_control_set_ptr->static_config.min_qp_allowed,
+                sequence_control_set_ptr->static_config.max_qp_allowed,
+                sb_ptr->qp);
+            sb_ptr->delta_qp = (int)picture_control_set_ptr->parent_pcs_ptr->picture_qp - (int)sb_ptr->qp;
+            picture_control_set_ptr->parent_pcs_ptr->average_qp += sb_ptr->qp;
+        }
+    }
+    else {
+        for (sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_tot_cnt; ++sb_addr) {
+            sb_ptr = picture_control_set_ptr->sb_ptr_array[sb_addr];
+            sb_ptr->qp = (uint8_t)picture_control_set_ptr->picture_qp;
+            sb_ptr->delta_qp = 0;
+            picture_control_set_ptr->parent_pcs_ptr->average_qp += sb_ptr->qp;
+        }
+    }
+}
 void* rate_control_kernel(void *input_ptr)
 {
     // Context
@@ -3524,7 +3625,7 @@ void* rate_control_kernel(void *input_ptr)
             if (picture_control_set_ptr->picture_number == 0) {
                 rate_control_model_init(rc_model_ptr, sequence_control_set_ptr);
 
-                av1_rc_init_minq_luts();
+                eb_av1_rc_init_minq_luts();
                 //init rate control parameters
                 init_rc(
                     context_ptr,
@@ -3592,7 +3693,7 @@ void* rate_control_kernel(void *input_ptr)
 
                 if (sequence_control_set_ptr->static_config.enable_qp_scaling_flag && picture_control_set_ptr->parent_pcs_ptr->qp_on_the_fly == EB_FALSE) {
                     const int32_t qindex = quantizer_to_qindex[(uint8_t)sequence_control_set_ptr->qp];
-                    const double q_val = av1_convert_qindex_to_q(qindex, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
+                    const double q_val = eb_av1_convert_qindex_to_q(qindex, (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
                     // if there are need enough pictures in the LAD/SlidingWindow, the adaptive QP scaling is not used
                     if (picture_control_set_ptr->parent_pcs_ptr->frames_in_sw >= QPS_SW_THRESH) {
                         int32_t new_qindex = adaptive_qindex_calc(
@@ -3607,7 +3708,7 @@ void* rate_control_kernel(void *input_ptr)
                                 (int32_t)(new_qindex));
                     }
                     else if (picture_control_set_ptr->slice_type == I_SLICE) {
-                        const int32_t delta_qindex = av1_compute_qdelta(
+                        const int32_t delta_qindex = eb_av1_compute_qdelta(
                             q_val,
                             q_val * 0.25,
                             (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
@@ -3622,7 +3723,7 @@ void* rate_control_kernel(void *input_ptr)
                         { { 0.40, 0.7, 0.85, 1.0, 1.0, 1.0 },
                         { 0.35, 0.6, 0.8,  0.9, 1.0, 1.0 } };
 
-                        const int32_t delta_qindex = av1_compute_qdelta(
+                        const int32_t delta_qindex = eb_av1_compute_qdelta(
                             q_val,
                             q_val * delta_rate_new[picture_control_set_ptr->parent_pcs_ptr->hierarchical_levels == 4][picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index],
                             (AomBitDepth)sequence_control_set_ptr->static_config.encoder_bit_depth);
@@ -3633,7 +3734,10 @@ void* rate_control_kernel(void *input_ptr)
                                 (int32_t)quantizer_to_qindex[sequence_control_set_ptr->static_config.max_qp_allowed],
                                 (int32_t)(qindex + delta_qindex));
                     }
-                    picture_control_set_ptr->picture_qp = (uint8_t)CLIP3((int32_t)sequence_control_set_ptr->static_config.min_qp_allowed, (int32_t)sequence_control_set_ptr->static_config.max_qp_allowed, frm_hdr->quantization_params.base_q_idx >> 2);
+                    picture_control_set_ptr->picture_qp =
+                        (uint8_t)CLIP3((int32_t)sequence_control_set_ptr->static_config.min_qp_allowed,
+                                       (int32_t)sequence_control_set_ptr->static_config.max_qp_allowed,
+                                       (frm_hdr->quantization_params.base_q_idx + 2) >> 2);
                 }
 
                 else if (picture_control_set_ptr->parent_pcs_ptr->qp_on_the_fly == EB_TRUE) {
@@ -3713,20 +3817,7 @@ void* rate_control_kernel(void *input_ptr)
                     }
                 }
             }
-
-            picture_control_set_ptr->parent_pcs_ptr->average_qp = 0;
-            LargestCodingUnit         *sb_ptr;
-            uint32_t                       lcuCodingOrder;
-            for (lcuCodingOrder = 0; lcuCodingOrder < sequence_control_set_ptr->sb_tot_cnt; ++lcuCodingOrder) {
-                sb_ptr = picture_control_set_ptr->sb_ptr_array[lcuCodingOrder];
-#if ADD_DELTA_QP_SUPPORT
-
-                sb_ptr->qp = quantizer_to_qindex[picture_control_set_ptr->picture_qp];
-#else
-                sb_ptr->qp = (uint8_t)picture_control_set_ptr->picture_qp;
-#endif
-                picture_control_set_ptr->parent_pcs_ptr->average_qp += sb_ptr->qp;
-            }
+            sb_qp_derivation(picture_control_set_ptr);
 
             // Get Empty Rate Control Results Buffer
             eb_get_empty_object(

@@ -334,11 +334,11 @@ MvClassType av1_get_mv_class(int32_t z, int32_t *offset) {
     return c;
 }
 
-//void av1_build_nmv_cost_table(int32_t *mvjoint, int32_t *mvcost[2],
+//void eb_av1_build_nmv_cost_table(int32_t *mvjoint, int32_t *mvcost[2],
 //    const NmvContext *ctx,
 //    MvSubpelPrecision precision)
 
-void av1_build_nmv_cost_table(int32_t *mvjoint, int32_t *mvcost[2],
+void eb_av1_build_nmv_cost_table(int32_t *mvjoint, int32_t *mvcost[2],
     const NmvContext *ctx,
     MvSubpelPrecision precision);
 
@@ -361,7 +361,7 @@ void av1_estimate_mv_rate(
     nmvcost_hp[0] = &md_rate_estimation_array->nmv_costs_hp[0][MV_MAX];
     nmvcost_hp[1] = &md_rate_estimation_array->nmv_costs_hp[1][MV_MAX];
 
-    av1_build_nmv_cost_table(
+    eb_av1_build_nmv_cost_table(
         md_rate_estimation_array->nmv_vec_cost,//out
         frm_hdr->allow_high_precision_mv ? nmvcost_hp : nmvcost, //out
         nmv_ctx,
@@ -372,7 +372,7 @@ void av1_estimate_mv_rate(
 
     if (frm_hdr->allow_intrabc) {
         int32_t *dvcost[2] = { &md_rate_estimation_array->dv_cost[0][MV_MAX], &md_rate_estimation_array->dv_cost[1][MV_MAX] };
-        av1_build_nmv_cost_table(md_rate_estimation_array->dv_joint_cost, dvcost, &picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc->ndvc,
+        eb_av1_build_nmv_cost_table(md_rate_estimation_array->dv_joint_cost, dvcost, &picture_control_set_ptr->coeff_est_entropy_coder_ptr->fc->ndvc,
             MV_SUBPEL_NONE);
     }
 }
@@ -475,42 +475,3 @@ void av1_estimate_coefficients_rate(
         }
     }
 }
-#if !ENABLE_CDF_UPDATE
-EbErrorType md_rate_estimation_context_init(MdRateEstimationContext *md_rate_estimation_array)
-{
-    uint32_t                      caseIndex1;
-    uint32_t                      caseIndex2;
-    uint32_t                      sliceIndex;
-    uint32_t                      qp_index;
-    MdRateEstimationContext  *mdRateEstimationTemp;
-
-    uint32_t                      cabacContextModelArrayOffset1 = 0;
-    uint32_t                      cabacContextModelArrayOffset2;
-
-    // Loop over all slice types
-    for (sliceIndex = 0; sliceIndex < TOTAL_NUMBER_OF_SLICE_TYPES; sliceIndex++) {
-        cabacContextModelArrayOffset1 = sliceIndex * TOTAL_NUMBER_OF_QP_VALUES;
-        // Loop over all Qps
-        for (qp_index = 0; qp_index < TOTAL_NUMBER_OF_QP_VALUES; qp_index++) {
-            cabacContextModelArrayOffset2 = qp_index;
-            mdRateEstimationTemp = (&md_rate_estimation_array[cabacContextModelArrayOffset1 + cabacContextModelArrayOffset2]);
-
-            // Split Flag Bits Table
-            // 0: Symbol = 0 & CtxSplit = 0
-            // 1: Symbol = 0 & CtxSplit = 1
-            // 2: Symbol = 0 & CtxSplit = 2
-            // 3: Symbol = 1 & CtxSplit = 0
-            // 4: Symbol = 1 & CtxSplit = 1
-            // 5: Symbol = 1 & CtxSplit = 2
-            for (caseIndex1 = 0; caseIndex1 < 2; caseIndex1++) {
-                for (caseIndex2 = 0; caseIndex2 < (NUMBER_OF_SPLIT_FLAG_CASES >> 1); caseIndex2++)
-                    mdRateEstimationTemp->split_flag_bits[(NUMBER_OF_SPLIT_FLAG_CASES >> 1)*caseIndex1 + caseIndex2] = 0;
-            }
-            for (caseIndex1 = 0; caseIndex1 < NUMBER_OF_MVD_CASES; caseIndex1++)
-                mdRateEstimationTemp->mvd_bits[caseIndex1] = 0;
-            mdRateEstimationTemp->initialized = 0;
-        }
-    }
-    return EB_ErrorNone;
-}
-#endif

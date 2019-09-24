@@ -25,46 +25,37 @@
 #define inline __inline
 #elif __GNUC__
 #define inline __inline__
-#ifndef fseeko64
-#define fseeko64 fseek
-#endif
-#ifndef ftello64
-#define ftello64 ftell
-#endif
 #else
-#error OS not supported
+#define inline
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Internal Marcos
+#define II_COMP_FLAG 1
+#define PRED_CHANGE                  1 // Change the MRP in 4L Pictures 3, 5 , 7 and 9 use 1 as the reference
+#define PRED_CHANGE_5L               1 // Change the MRP in 5L Pictures 3, 5 , 7 and 9 use 1 as the reference, 11, 13, 15 and 17 use 9 as the reference
+
+
 #define NON_AVX512_SUPPORT
 
-#define INCOMPLETE_SB_FIX                 1 // Handle the incomplete SBs properly based on the standard and consider all allowed blocks
-#define QPS_TUNING                        1 // Tune the QPS algorithm to consider ALR_REF filtering and movement of the pictures
-                                            // Update to a more accurate QPS complexity metric
-#define CDEF_AVX_OPT                      1
-#define ENABLE_CDF_UPDATE                 1 // Add the support for end of frame CDF update
 #define MR_MODE                           0
 #define EIGTH_PEL_MV                      0
-#define ALTREF_TF_EIGHTH_PEL_SEARCH       1 // Add 1/8 sub-pel search/compensation @ Temporal Filtering
-#define ALTREF_TF_ADAPTIVE_WINDOW_SIZE    1 // Add the ability to use dynamic/asymmetric window for AltRef temporal filtering, add the ability to derive the activity within past and future frames @ picture decision, and add a logic to derive window size from activity
+
 //FOR DEBUGGING - Do not remove
 #define NO_ENCDEC                         0 // bypass encDec to test cmpliance of MD. complained achieved when skip_flag is OFF. Port sample code from VCI-SW_AV1_Candidate1 branch
 
 #define ADP_STATS_PER_LAYER                             0
-#define NFL_TX_TH                                       12 // To be tuned
-#define NFL_IT_TH                                       2 // To be tuned
 #define NSQ_TAB_SIZE                                    6
 #define AOM_INTERP_EXTEND                               4
+#define OPTIMISED_EX_SUBPEL                             1
 
-
-
-
-
+#if OPTIMISED_EX_SUBPEL
+#define H_PEL_SEARCH_WIND 3  // 1/2-pel serach window
+#else
 #define H_PEL_SEARCH_WIND 4  // 1/2-pel serach window
+#endif
 #define Q_PEL_SEARCH_WIND 2  // 1/4-pel serach window
 #define HP_REF_OPT        1  // Remove redundant positions.
 typedef enum ME_HP_MODE {
@@ -123,11 +114,16 @@ enum {
 #define PAD_VALUE                                (128+32)
 
 //  Delta QP support
-#define ADD_DELTA_QP_SUPPORT                      0  // Add delta QP support - Please enable this flag and iproveSharpness (config) to test the QPM
+#define ADD_DELTA_QP_SUPPORT                      1  // Add delta QP support
 #define BLOCK_MAX_COUNT_SB_128                    4421  // TODO: reduce alloction for 64x64
 #define BLOCK_MAX_COUNT_SB_64                     1101  // TODO: reduce alloction for 64x64
 #define MAX_TXB_COUNT                             4 // Maximum number of transform blocks.
-#define MAX_NFL                                   40
+#if II_COMP_FLAG
+#define MAX_NFL                                  80
+#else
+#define MAX_NFL                                   65
+#endif
+#define MAX_NFL_BUFF                              (MAX_NFL + CAND_CLASS_TOTAL)  //need one extra temp buffer for each fast loop call
 #define MAX_LAD                                   120 // max lookahead-distance 2x60fps
 #define ROUND_UV(x) (((x)>>3)<<3)
 #define AV1_PROB_COST_SHIFT 9
@@ -290,7 +286,7 @@ extern void RunEmms();
 
 #define INLINE __inline
 #define RESTRICT
-#ifdef _MSC_VER
+#ifdef _WIN32
 #define FOPEN(f,s,m) fopen_s(&f,s,m)
 #else
 #define FOPEN(f,s,m) f=fopen(s,m)
@@ -299,14 +295,14 @@ extern void RunEmms();
 #define IMPLIES(a, b) (!(a) || (b))  //  Logical 'a implies b' (or 'a -> b')
 #if (defined(__GNUC__) && __GNUC__) || defined(__SUNPRO_C)
 #define DECLARE_ALIGNED(n, typ, val) typ val __attribute__((aligned(n)))
-#elif defined(_MSC_VER)
+#elif defined(_WIN32)
 #define DECLARE_ALIGNED(n, typ, val) __declspec(align(n)) typ val
 #else
 #warning No alignment directives known for this compiler.
 #define DECLARE_ALIGNED(n, typ, val) typ val
 #endif
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #define EB_ALIGN(n) __declspec(align(n))
 #elif defined(__GNUC__)
 #define EB_ALIGN(n) __attribute__((__aligned__(n)))
@@ -314,7 +310,7 @@ extern void RunEmms();
 #define EB_ALIGN(n)
 #endif
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 #define AOM_FORCE_INLINE __forceinline
 #define AOM_INLINE __inline
 #else
@@ -322,6 +318,9 @@ extern void RunEmms();
     // TODO(jbb): Allow a way to force inline off for older compilers.
 #define AOM_INLINE inline
 #endif
+
+#define SIMD_INLINE static AOM_FORCE_INLINE
+
     //*********************************************************************************************************************//
     // mem.h
     /* shift right or left depending on sign of n */
@@ -382,6 +381,7 @@ typedef struct ConvolveParams
     int32_t use_jnt_comp_avg;
     int32_t fwd_offset;
     int32_t bck_offset;
+    int32_t use_dist_wtd_comp_avg;
 } ConvolveParams;
 
 // texture component type
@@ -421,12 +421,46 @@ static INLINE uint16_t clip_pixel_highbd(int32_t val, int32_t bd) {
 #ifndef ATTRIBUTE_PACKED
 #if defined(__GNUC__) && __GNUC__
 #define ATTRIBUTE_PACKED __attribute__((packed))
-#elif defined(_MSC_VER)
-#define ATTRIBUTE_PACKED
 #else
 #define ATTRIBUTE_PACKED
 #endif
 #endif /* ATTRIBUTE_PACKED */
+
+typedef enum CAND_CLASS {
+    CAND_CLASS_0,
+    CAND_CLASS_1,
+    CAND_CLASS_2,
+    CAND_CLASS_3,
+#if II_COMP_FLAG
+    CAND_CLASS_4,
+#endif
+    CAND_CLASS_TOTAL
+} CAND_CLASS;
+
+typedef enum MD_STAGE {
+    MD_STAGE_0,
+    MD_STAGE_1,
+    MD_STAGE_2,
+    MD_STAGE_3,
+    MD_STAGE_TOTAL
+} MD_STAGE;
+
+#define MD_STAGING_MODE_0    0
+#define MD_STAGING_MODE_1    1
+#define MD_STAGING_MODE_2    2
+#define MD_STAGING_MODE_3    3
+
+#define INTRA_NFL           16
+#define INTER_NEW_NFL       16
+#define INTER_PRED_NFL      16
+
+
+#define BEST_CANDIDATE_COUNT 4
+#define MAX_REF_TYPE_CAND   30
+#define PRUNE_REC_TH         5
+#define PRUNE_REF_ME_TH      2
+
+#define MD_EXIT_THSL         0 // MD_EXIT_THSL -->0 is lossless 100 is maximum. Increase with a step of 10-20.
 
 typedef enum
 {
@@ -568,7 +602,7 @@ typedef char PartitionContextType;
 #define PARTITION_CONTEXTS (PARTITION_BlockSizeS * PARTITION_PLOFFSET)
 
 // block transform size
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 typedef uint8_t TxSize;
 enum ATTRIBUTE_PACKED {
 #else
@@ -598,7 +632,7 @@ typedef enum ATTRIBUTE_PACKED {
     TX_SIZES_LARGEST = TX_64X64,
     TX_INVALID = 255  // Invalid transform size
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 };
 #else
 } TxSize;
@@ -992,6 +1026,56 @@ typedef enum
     MASKED_COMPOUND_TYPES = 2,
 } CompoundType;
 
+#define   COMPOUND_INTRA  4//just for the decoder
+#define AOM_BLEND_A64_ROUND_BITS 6
+#define AOM_BLEND_A64_MAX_ALPHA (1 << AOM_BLEND_A64_ROUND_BITS)  // 64
+#define DIFF_FACTOR_LOG2 4
+#define DIFF_FACTOR (1 << DIFF_FACTOR_LOG2)
+#define AOM_BLEND_AVG(v0, v1) ROUND_POWER_OF_TWO((v0) + (v1), 1)
+typedef uint16_t CONV_BUF_TYPE;
+#define MAX_WEDGE_TYPES (1 << 4)
+#define MAX_WEDGE_SIZE_LOG2 5  // 32x32
+#define MAX_WEDGE_SIZE (1 << MAX_WEDGE_SIZE_LOG2)
+#define MAX_WEDGE_SQUARE (MAX_WEDGE_SIZE * MAX_WEDGE_SIZE)
+#define WEDGE_WEIGHT_BITS 6
+#define WEDGE_NONE -1
+#define MASK_MASTER_SIZE ((MAX_WEDGE_SIZE) << 1)
+#define MASK_MASTER_STRIDE (MASK_MASTER_SIZE)
+typedef struct {
+    int enable_order_hint;           // 0 - disable order hint, and related tools
+    int order_hint_bits_minus_1;     // dist_wtd_comp, ref_frame_mvs,
+    int enable_dist_wtd_comp;        // 0 - disable dist-wtd compound modes
+    int enable_ref_frame_mvs;        // 0 - disable ref frame mvs
+} OrderHintInfoEnc;
+enum {
+    MD_COMP_AVG,
+    MD_COMP_DIST,
+    MD_COMP_DIFF0,
+    MD_COMP_WEDGE,
+    MD_COMP_TYPES,
+} UENUM1BYTE(MD_COMP_TYPE);
+#define COMPOUND_TYPE  CompoundType
+#define MAX_DIFFWTD_MASK_BITS 1
+enum {
+    DIFFWTD_38 = 0,
+    DIFFWTD_38_INV,
+    DIFFWTD_MASK_TYPES,
+} UENUM1BYTE(DIFFWTD_MASK_TYPE);
+typedef struct {
+    uint8_t *seg_mask;
+    int wedge_index;
+    int wedge_sign;
+    DIFFWTD_MASK_TYPE mask_type;
+    COMPOUND_TYPE type;
+} INTERINTER_COMPOUND_DATA;
+
+#if II_COMP_FLAG
+#define AOM_BLEND_A64(a, v0, v1)                                          \
+  ROUND_POWER_OF_TWO((a) * (v0) + (AOM_BLEND_A64_MAX_ALPHA - (a)) * (v1), \
+                     AOM_BLEND_A64_ROUND_BITS)
+#define IS_POWER_OF_TWO(x) (((x) & ((x)-1)) == 0)
+#define INTERINTRA_MODE  InterIntraMode
+#endif
 typedef enum ATTRIBUTE_PACKED
 {
     FILTER_DC_PRED,
@@ -1765,7 +1849,7 @@ static const EbWarpedMotionParams default_warp_params = {
 #define M6_YBITS_THSHLD                     80
 #define M6_YDC_THSHLD                       10
 
-#ifdef    _MSC_VER
+#ifdef _WIN32
 #define NOINLINE                __declspec ( noinline )
 #define FORCE_INLINE            __forceinline
 #else
@@ -2130,7 +2214,7 @@ typedef EbErrorType(*EbCreator)(
     EbPtr *object_dbl_ptr,
     EbPtr object_init_data_ptr);
 
-#define INVALID_MV            0xFFFFFFFF    //ICOPY They changed this to 0x80008000
+#define INVALID_MV            0x80008000 //0xFFFFFFFF    //ICOPY They changed this to 0x80008000
 #define BLKSIZE 64
 
 /***************************************
@@ -2218,7 +2302,7 @@ extern    uint32_t                   lib_mutex_count;
 
 extern    uint32_t                   app_malloc_count;
 
-#define ALVALUE 32
+#define ALVALUE 64
 
 #define EB_ADD_APP_MEM(pointer, size, pointer_class, count, release, return_type) \
     do { \
@@ -2243,7 +2327,7 @@ extern    uint32_t                   app_malloc_count;
     pointer = (type)malloc(n_elements); \
     EB_ADD_APP_MEM(pointer, n_elements, pointer_class, app_malloc_count, return_type);
 
-#define ALVALUE 32
+#define ALVALUE 64
 
 #define EB_CREATE_SEMAPHORE(pointer, initial_count, max_count) \
     do { \
@@ -2253,8 +2337,11 @@ extern    uint32_t                   app_malloc_count;
 
 #define EB_DESTROY_SEMAPHORE(pointer) \
     do { \
-        eb_destroy_semaphore(pointer); \
-        EB_REMOVE_MEM_ENTRY(pointer, EB_SEMAPHORE); \
+        if (pointer) { \
+            eb_destroy_semaphore(pointer); \
+            EB_REMOVE_MEM_ENTRY(pointer, EB_SEMAPHORE); \
+            pointer = NULL; \
+        } \
     }while (0)
 
 #define EB_CREATE_MUTEX(pointer) \
@@ -2268,6 +2355,7 @@ extern    uint32_t                   app_malloc_count;
         if (pointer) { \
             eb_destroy_mutex(pointer); \
             EB_REMOVE_MEM_ENTRY(pointer, EB_MUTEX); \
+            pointer = NULL; \
         } \
     } while (0)
 
@@ -2323,7 +2411,7 @@ void(*ErrorHandler)(
 #if LIB_PRINTF_ENABLE
 #define SVT_LOG printf
 #else
-#if _MSC_VER
+#ifdef _MSC_VER
 #define SVT_LOG(s, ...) printf("")
 #else
 #define SVT_LOG(s, ...) printf("",##__VA_ARGS__)
@@ -2387,22 +2475,6 @@ typedef enum DownSamplingMethod
 //***Segments***
 #define EB_SEGMENT_MIN_COUNT                        1
 #define EB_SEGMENT_MAX_COUNT                        64
-
-//***TMVP***
-#define LOG_MV_COMPRESS_UNIT_SIZE                   4
-#define MAX_TMVP_CAND_PER_LCU                       (BLOCK_SIZE_64 >> LOG_MV_COMPRESS_UNIT_SIZE)*(BLOCK_SIZE_64 >> LOG_MV_COMPRESS_UNIT_SIZE)
-
-//***MV Merge***
-#define MAX_NUM_OF_MV_MERGE_CANDIDATE               5
-
-//***AMVP***
-#define MAX_NUM_OF_AMVP_CANDIDATES                  2
-
-//***Mode Decision Candidate List***
-#define MAX_MODE_DECISION_CATEGORY_NUM              6
-#define LOG_MAX_AMVP_MODE_DECISION_CANDIDATE_NUM    2
-#define MAX_AMVP_MODE_DECISION_CANDIDATE_NUM        (1 << LOG_MAX_AMVP_MODE_DECISION_CANDIDATE_NUM)
-
 #define CU_MAX_COUNT                                85
 
 #define EB_EVENT_MAX_COUNT                          20
@@ -2449,7 +2521,6 @@ typedef enum DownSamplingMethod
 #define TRANSFORM_MAX_SIZE          64
 #define TRANSFORM_MIN_SIZE          4
 
-#define QP_BD_OFFSET           12 //2x(bit_depth-8) 12 for 10 bit case
 #define BIT_INCREMENT_10BIT    2
 #define BIT_INCREMENT_8BIT     0
 
@@ -2699,9 +2770,7 @@ static const uint8_t intra_area_th_class_1[MAX_HIERARCHICAL_LEVEL][MAX_TEMPORAL_
 #define PF_OFF  0
 #define PF_N2   1
 #define PF_N4   2
-
 #define STAGE uint8_t
-#define MD_STAGE  0      // MD stage
 #define ED_STAGE  1      // ENCDEC stage
 
 #define EB_TRANS_COEFF_SHAPE uint8_t
@@ -2711,9 +2780,9 @@ static const uint8_t intra_area_th_class_1[MAX_HIERARCHICAL_LEVEL][MAX_TEMPORAL_
 #define ONLY_DC_SHAPE 3
 
 #define EB_CHROMA_LEVEL uint8_t
-#define CHROMA_MODE_0  0 // Chroma @ MD
-#define CHROMA_MODE_1  1 // Chroma blind @ MD + CFL @ EP
-#define CHROMA_MODE_2  2 // Chroma blind @ MD + no CFL @ EP
+#define CHROMA_MODE_0  0 // Full chroma search @ MD
+#define CHROMA_MODE_1  1 // Fast chroma search @ MD
+#define CHROMA_MODE_2  2 // Chroma blind @ MD + CFL @ EP
 #define CHROMA_MODE_3  3 // Chroma blind @ MD + no CFL @ EP
 
 typedef enum EbSbComplexityStatus
@@ -3121,6 +3190,20 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
                             ME/HME settings
 *******************************************************************************/
 //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+static const uint8_t enable_hme_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   0,    0,    0,    0,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    },{
+        {   0,    0,    0,    0,    0,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    }
+};
+//     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
 static const uint8_t enable_hme_level0_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
         {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
@@ -3138,8 +3221,8 @@ static const uint8_t enable_hme_level0_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_
 static const uint16_t hme_level0_total_search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
         {  48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48,   48 },
-        { 112,  112,  112,  112,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
-        { 128,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
+        {  96,  96,    96,   96,  112,   48,   48,   48,   48,   48,   48,   48,   48 },
+        { 112,  128,  128,  128,  128,   48,   48,   48,   48,   48,   48,   48,   48 },
         { 128,  128,  128,  128,  128,   96,   96,   96,   96,   96,   96,   96,   96 },
      } , {
         { 128,  128,  128,  128,  128,  128,  128,  128,  128,  128,  128,  128,  128 },
@@ -3152,7 +3235,7 @@ static const uint16_t hme_level0_total_search_area_width[SC_MAX_LEVEL][INPUT_SIZ
 static const uint16_t hme_level0_search_area_in_width_array_left[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
         {  24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24,   24 },
-        {  56,   56,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
+        {  48,   48,   56,   56,   56,   24,   24,   24,   24,   24,   24,   24,   24 },
         {  64,   64,   64,   64,   64,   24,   24,   24,   24,   24,   24,   24,   24 },
         {  64,   64,   64,   64,   64,   48,   48,   48,   48,   48,   48,   48,   48 }
     } , {
@@ -3352,28 +3435,28 @@ static const uint16_t hme_level2_search_area_in_height_array_bottom[SC_MAX_LEVEL
 
 static const uint16_t search_area_width[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
-        {  64,   64,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 112,  112,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
-        { 128,  128,   64,   64,   64,   64,   64,   64,   48,   16,   16,    16,   16 }
+        { 128,  128,  128,  128,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 160,  160,  160,  160,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
+        { 192,  192,  192,  192,   64,   64,   64,   64,   48,   16,   16,    16,   16 },
     } , {
-        {1280,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {1280,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {1280,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 },
-        {1280,  640,  640,  288,  208,  168,  128,  128,   64,   80,   80,    80,   80 }
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 },
+        {960 ,  640,  640,  288,  288,  168,  128,  128,   64,   80,   80,    80,   80 }
     }
 };
 static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {
-        {  64,   64,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 112,  112,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
-        { 128,  128,   64,   64,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
+        { 128,  128,  128,  128,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 160,  160,  160,  160,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 },
+        { 192,  192,  192,  192,   32,   32,   32,   32,   16,    9,    9,     9,    9 }
     } , {
-        {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 },
-        {1280,  640,  640,  248,  168,  128,   80,   80,   48,   80,   80,    80,   80 }
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {480 ,  480,  480,  144,  144,   88,   48,   48,   48,   48,   48,    48,   48 },
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 },
+        {960 ,  640,  640,  288,  288,  168,   80,   80,   48,   80,   80,    80,   80 }
     }
 
     //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
@@ -3382,6 +3465,20 @@ static const uint16_t search_area_height[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUP
 /******************************************************************************
                             ME/HME settings for Altref Temporal Filtering
 *******************************************************************************/
+//     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
+static const uint8_t tf_enable_hme_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
+    {
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    },{
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_576p_RANGE_OR_LOWER
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_720P_RANGE/INPUT_SIZE_1080i_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_1080p_RANGE
+        {   1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1,    1 },      // INPUT_SIZE_4K_RANGE
+    }
+};
 //     M0    M1    M2    M3    M4    M5    M6    M7    M8    M9    M10    M11    M12
 static const uint8_t tf_enable_hme_level0_flag[SC_MAX_LEVEL][INPUT_SIZE_COUNT][MAX_SUPPORTED_MODES] = {
     {

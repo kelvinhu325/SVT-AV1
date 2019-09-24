@@ -39,7 +39,6 @@ int enable_dump;
 #define READ_REF_BIT(pname) \
   svt_read_symbol(r, get_pred_cdf_##pname(pi), 2, ACCT_STR)
 #define SQR_BLOCK_SIZES 6
-#define INTRABC_DELAY_PIXELS 256
 
 typedef AomCdfProb(*base_cdf_arr)[CDF_SIZE(4)];
 typedef AomCdfProb(*br_cdf_arr)[CDF_SIZE(BR_CDF_SIZE)];
@@ -49,46 +48,46 @@ typedef struct txb_ctx {
     int dc_sign_ctx;
 } TXB_CTX;
 
-static const int16_t k_eob_group_start[12] = { 0,  1,  2,  3,   5,   9,
+static const int16_t eb_k_eob_group_start[12] = { 0,  1,  2,  3,   5,   9,
                                         17, 33, 65, 129, 257, 513 };
-static const int16_t k_eob_offset_bits[12] = { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+static const int16_t eb_k_eob_offset_bits[12] = { 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 
-extern const int8_t av1_nz_map_ctx_offset_4x4[16];
-extern const int8_t av1_nz_map_ctx_offset_8x8[64];
-extern const int8_t av1_nz_map_ctx_offset_16x16[256];
-extern const int8_t av1_nz_map_ctx_offset_32x32[1024];
-extern const int8_t av1_nz_map_ctx_offset_8x4[32];
-extern const int8_t av1_nz_map_ctx_offset_8x16[128];
-extern const int8_t av1_nz_map_ctx_offset_16x8[128];
-extern const int8_t av1_nz_map_ctx_offset_16x32[512];
-extern const int8_t av1_nz_map_ctx_offset_32x16[512];
-extern const int8_t av1_nz_map_ctx_offset_32x64[1024];
-extern const int8_t av1_nz_map_ctx_offset_64x32[1024];
-extern const int8_t av1_nz_map_ctx_offset_4x16[64];
-extern const int8_t av1_nz_map_ctx_offset_16x4[64];
-extern const int8_t av1_nz_map_ctx_offset_8x32[256];
-extern const int8_t av1_nz_map_ctx_offset_32x8[256];
+extern const int8_t eb_av1_nz_map_ctx_offset_4x4[16];
+extern const int8_t eb_av1_nz_map_ctx_offset_8x8[64];
+extern const int8_t eb_av1_nz_map_ctx_offset_16x16[256];
+extern const int8_t eb_av1_nz_map_ctx_offset_32x32[1024];
+extern const int8_t eb_av1_nz_map_ctx_offset_8x4[32];
+extern const int8_t eb_av1_nz_map_ctx_offset_8x16[128];
+extern const int8_t eb_av1_nz_map_ctx_offset_16x8[128];
+extern const int8_t eb_av1_nz_map_ctx_offset_16x32[512];
+extern const int8_t eb_av1_nz_map_ctx_offset_32x16[512];
+extern const int8_t eb_av1_nz_map_ctx_offset_32x64[1024];
+extern const int8_t eb_av1_nz_map_ctx_offset_64x32[1024];
+extern const int8_t eb_av1_nz_map_ctx_offset_4x16[64];
+extern const int8_t eb_av1_nz_map_ctx_offset_16x4[64];
+extern const int8_t eb_av1_nz_map_ctx_offset_8x32[256];
+extern const int8_t eb_av1_nz_map_ctx_offset_32x8[256];
 
-static const int8_t *av1_nz_map_ctx_offset[19] = {
-  av1_nz_map_ctx_offset_4x4,    // TX_4x4
-  av1_nz_map_ctx_offset_8x8,    // TX_8x8
-  av1_nz_map_ctx_offset_16x16,  // TX_16x16
-  av1_nz_map_ctx_offset_32x32,  // TX_32x32
-  av1_nz_map_ctx_offset_32x32,  // TX_32x32
-  av1_nz_map_ctx_offset_4x16,   // TX_4x8
-  av1_nz_map_ctx_offset_8x4,    // TX_8x4
-  av1_nz_map_ctx_offset_8x32,   // TX_8x16
-  av1_nz_map_ctx_offset_16x8,   // TX_16x8
-  av1_nz_map_ctx_offset_16x32,  // TX_16x32
-  av1_nz_map_ctx_offset_32x16,  // TX_32x16
-  av1_nz_map_ctx_offset_32x64,  // TX_32x64
-  av1_nz_map_ctx_offset_64x32,  // TX_64x32
-  av1_nz_map_ctx_offset_4x16,   // TX_4x16
-  av1_nz_map_ctx_offset_16x4,   // TX_16x4
-  av1_nz_map_ctx_offset_8x32,   // TX_8x32
-  av1_nz_map_ctx_offset_32x8,   // TX_32x8
-  av1_nz_map_ctx_offset_16x32,  // TX_16x64
-  av1_nz_map_ctx_offset_64x32,  // TX_64x16
+static const int8_t *eb_av1_nz_map_ctx_offset[19] = {
+  eb_av1_nz_map_ctx_offset_4x4,    // TX_4x4
+  eb_av1_nz_map_ctx_offset_8x8,    // TX_8x8
+  eb_av1_nz_map_ctx_offset_16x16,  // TX_16x16
+  eb_av1_nz_map_ctx_offset_32x32,  // TX_32x32
+  eb_av1_nz_map_ctx_offset_32x32,  // TX_32x32
+  eb_av1_nz_map_ctx_offset_4x16,   // TX_4x8
+  eb_av1_nz_map_ctx_offset_8x4,    // TX_8x4
+  eb_av1_nz_map_ctx_offset_8x32,   // TX_8x16
+  eb_av1_nz_map_ctx_offset_16x8,   // TX_16x8
+  eb_av1_nz_map_ctx_offset_16x32,  // TX_16x32
+  eb_av1_nz_map_ctx_offset_32x16,  // TX_32x16
+  eb_av1_nz_map_ctx_offset_32x64,  // TX_32x64
+  eb_av1_nz_map_ctx_offset_64x32,  // TX_64x32
+  eb_av1_nz_map_ctx_offset_4x16,   // TX_4x16
+  eb_av1_nz_map_ctx_offset_16x4,   // TX_16x4
+  eb_av1_nz_map_ctx_offset_8x32,   // TX_8x32
+  eb_av1_nz_map_ctx_offset_32x8,   // TX_32x8
+  eb_av1_nz_map_ctx_offset_16x32,  // TX_16x64
+  eb_av1_nz_map_ctx_offset_64x32,  // TX_64x16
 };
 
 #define NZ_MAP_CTX_0 SIG_COEF_CONTEXTS_2D
@@ -105,10 +104,10 @@ const int nz_map_ctx_offset_1d[32] = {
   NZ_MAP_CTX_10, NZ_MAP_CTX_10,
 };
 
-//static int div_mult[32] = { 0,    16384, 8192, 5461, 4096, 3276, 2730, 2340,
-//                            2048, 1820,  1638, 1489, 1365, 1260, 1170, 1092,
-//                            1024, 963,   910,  862,  819,  780,  744,  712,
-//                            682,  655,   630,  606,  585,  564,  546,  528 };
+static int div_mult[32] = { 0,    16384, 8192, 5461, 4096, 3276, 2730, 2340,
+                            2048, 1820,  1638, 1489, 1365, 1260, 1170, 1092,
+                            1024, 963,   910,  862,  819,  780,  744,  712,
+                            682,  655,   630,  606,  585,  564,  546,  528 };
 
 static INLINE int get_nz_mag(const uint8_t *const levels,
     const int bwl, const TxClass tx_class)
@@ -150,7 +149,7 @@ static INLINE int get_nz_map_ctx_from_stats(
     switch (tx_class)
     {
     case TX_CLASS_2D:
-        return ctx + av1_nz_map_ctx_offset[tx_size][coeff_idx];
+        return ctx + eb_av1_nz_map_ctx_offset[tx_size][coeff_idx];
     case TX_CLASS_HORIZ: {
         const int row = coeff_idx >> bwl;
         const int col = coeff_idx - (row << bwl);
@@ -165,11 +164,253 @@ static INLINE int get_nz_map_ctx_from_stats(
     return 0;
 }
 
-void palette_mode_info(/*EbDecHandle *dec_handle,
-    int mi_row, int mi_col, SvtReader *r*/)
+static INLINE int get_palette_bsize_ctx(BlockSize bsize) {
+    return num_pels_log2_lookup[bsize] - num_pels_log2_lookup[BLOCK_8X8];
+}
+
+static INLINE int get_palette_mode_ctx(PartitionInfo_t *pi) {
+    ModeInfo_t *above_mi = pi->above_mbmi;
+    ModeInfo_t *left_mi = pi->left_mbmi;
+    int ctx = 0;
+    if (above_mi) ctx += (above_mi->palette_size[0] > 0);
+    if (left_mi) ctx += (left_mi->palette_size[0] > 0);
+    return ctx;
+}
+
+static void palette_add_to_cache(uint16_t *cache, int *n, uint16_t val) {
+    // Do not add an already existing value
+    if (*n > 0 && val == cache[*n - 1]) return;
+
+    cache[(*n)++] = val;
+}
+
+int av1_get_palette_cache(ParseCtxt *parse_ctx, PartitionInfo_t *pi,
+    int mi_row, int mi_col, int plane, uint16_t *cache) {
+    const int row = -pi->mb_to_top_edge >> 3;
+    // Do not refer to above SB row when on SB boundary.
+    ModeInfo_t *above_mi =
+        (row % (1 << MIN_SB_SIZE_LOG2)) ? pi->above_mbmi : NULL;
+    ParseNbr4x4Ctxt *ngr_ctx = &parse_ctx->parse_nbr4x4_ctxt;
+    ModeInfo_t *left_mi = pi->left_mbmi;
+    uint8_t above_n = 0, left_n = 0;
+    if (above_mi) above_n = above_mi->palette_size[plane != 0];
+    if (left_mi) left_n = left_mi->palette_size[plane != 0];
+    if (above_n == 0 && left_n == 0) return 0;
+    int above_idx = 0;
+    int left_idx = 0;
+    int n = 0;
+
+    const uint16_t *above_colors = above_mi ?
+        ngr_ctx->above_palette_colors[plane] +
+        (PALETTE_MAX_SIZE * ((mi_col - parse_ctx->sb_col_mi) % 16)) : NULL;
+    const uint16_t *left_colors = left_mi ?
+        ngr_ctx->left_palette_colors[plane] +
+        (PALETTE_MAX_SIZE * (mi_row - parse_ctx->sb_row_mi)) : NULL;
+    // Merge the sorted lists of base colors from above and left to get
+    // combined sorted color cache.
+    while (above_n > 0 && left_n > 0) {
+        uint16_t v_above = above_colors[above_idx];
+        uint16_t v_left = left_colors[left_idx];
+        if (v_left < v_above) {
+            palette_add_to_cache(cache, &n, v_left);
+            ++left_idx, --left_n;
+        }
+        else {
+            palette_add_to_cache(cache, &n, v_above);
+            ++above_idx, --above_n;
+            if (v_left == v_above) ++left_idx, --left_n;
+        }
+    }
+    while (above_n-- > 0) {
+        uint16_t val = above_colors[above_idx++];
+        palette_add_to_cache(cache, &n, val);
+    }
+    while (left_n-- > 0) {
+        uint16_t val = left_colors[left_idx++];
+        palette_add_to_cache(cache, &n, val);
+    }
+    assert(n <= 2 * PALETTE_MAX_SIZE);
+    return n;
+}
+
+// Merge the sorted list of cached colors(cached_colors[0...n_cached_colors-1])
+// and the sorted list of transmitted colors(colors[n_cached_colors...n-1]) into
+// one single sorted list(colors[...]).
+static void merge_colors(uint16_t *colors, uint16_t *cached_colors,
+    int n_colors, int n_cached_colors) {
+    if (n_cached_colors == 0) return;
+    int cache_idx = 0, trans_idx = n_cached_colors;
+    for (int i = 0; i < n_colors; ++i) {
+        if (cache_idx < n_cached_colors &&
+            (trans_idx >= n_colors ||
+                cached_colors[cache_idx] <= colors[trans_idx])) {
+            colors[i] = cached_colors[cache_idx++];
+        }
+        else {
+            assert(trans_idx < n_colors);
+            colors[i] = colors[trans_idx++];
+        }
+    }
+}
+
+static void read_palette_colors_y(ParseCtxt *parse_ctx, PartitionInfo_t *pi,
+    int bit_depth, int mi_row, int mi_col, SvtReader *r)
 {
-    //TO-DO
-    assert(0);
+    ParseNbr4x4Ctxt  *nbr_ctx = &parse_ctx->parse_nbr4x4_ctxt;
+    uint16_t color_cache[2 * PALETTE_MAX_SIZE];
+    uint16_t cached_colors[PALETTE_MAX_SIZE];
+    const int n_cache = av1_get_palette_cache(parse_ctx, pi,
+        mi_row, mi_col, 0, color_cache);
+    const int n = pi->mi->palette_size[0];
+    int idx = 0;
+    for (int i = 0; i < n_cache && idx < n; ++i)
+        if (svt_read_bit(r, ACCT_STR)) cached_colors[idx++] = color_cache[i];
+    if (idx < n) {
+        const int n_cached_colors = idx;
+        nbr_ctx->palette_colors[idx++] = svt_read_literal(r, bit_depth, ACCT_STR);
+        if (idx < n) {
+            const int min_bits = bit_depth - 3;
+            int bits = min_bits + svt_read_literal(r, 2, ACCT_STR);
+            int range = (1 << bit_depth) - nbr_ctx->palette_colors[idx - 1] - 1;
+            for (; idx < n; ++idx) {
+                assert(range >= 0);
+                const int delta = svt_read_literal(r, bits, ACCT_STR) + 1;
+                nbr_ctx->palette_colors[idx] =
+                    clamp(nbr_ctx->palette_colors[idx - 1] + delta,
+                          0, (1 << bit_depth) - 1);
+                range -= (nbr_ctx->palette_colors[idx] -
+                          nbr_ctx->palette_colors[idx - 1]);
+                bits = AOMMIN(bits, av1_ceil_log2(range));
+            }
+        }
+        merge_colors(nbr_ctx->palette_colors, cached_colors, n, n_cached_colors);
+    }
+    else {
+        memcpy(nbr_ctx->palette_colors, cached_colors, n * sizeof(cached_colors[0]));
+    }
+}
+
+static void read_palette_colors_uv(ParseCtxt *parse_ctx, PartitionInfo_t *pi,
+    int bit_depth, int mi_row, int mi_col, SvtReader *r)
+{
+    ParseNbr4x4Ctxt  *nbr_ctx = &parse_ctx->parse_nbr4x4_ctxt;
+    const int n = pi->mi->palette_size[1];
+    // U channel colors.
+    uint16_t color_cache[2 * PALETTE_MAX_SIZE];
+    uint16_t cached_colors[PALETTE_MAX_SIZE];
+    const int n_cache = av1_get_palette_cache(parse_ctx, pi,
+                        mi_row, mi_col, 1, color_cache);
+    int idx = 0;
+    for (int i = 0; i < n_cache && idx < n; ++i)
+        if (svt_read_bit(r, ACCT_STR)) cached_colors[idx++] = color_cache[i];
+    if (idx < n) {
+        const int n_cached_colors = idx;
+        idx += PALETTE_MAX_SIZE;
+        nbr_ctx->palette_colors[idx++] = svt_read_literal(r, bit_depth, ACCT_STR);
+        if (idx < PALETTE_MAX_SIZE + n) {
+            const int min_bits = bit_depth - 3;
+            int bits = min_bits + svt_read_literal(r, 2, ACCT_STR);
+            int range = (1 << bit_depth) - nbr_ctx->palette_colors[idx - 1];
+            for (; idx < PALETTE_MAX_SIZE + n; ++idx) {
+                assert(range >= 0);
+                const int delta = svt_read_literal(r, bits, ACCT_STR);
+                nbr_ctx->palette_colors[idx] =
+                    clamp(nbr_ctx->palette_colors[idx - 1] + delta,
+                          0, (1 << bit_depth) - 1);
+                range -= (nbr_ctx->palette_colors[idx] -
+                          nbr_ctx->palette_colors[idx - 1]);
+                bits = AOMMIN(bits, av1_ceil_log2(range));
+            }
+        }
+        merge_colors(nbr_ctx->palette_colors + PALETTE_MAX_SIZE,
+                     cached_colors, n, n_cached_colors);
+    }
+    else {
+        memcpy(nbr_ctx->palette_colors + PALETTE_MAX_SIZE, cached_colors,
+               n * sizeof(cached_colors[0]));
+    }
+
+    // V channel colors.
+    if (svt_read_bit(r, ACCT_STR)) {  // Delta encoding.
+        const int min_bits_v = bit_depth - 4;
+        const int max_val = 1 << bit_depth;
+        int bits = min_bits_v + svt_read_literal(r, 2, ACCT_STR);
+        nbr_ctx->palette_colors[2 * PALETTE_MAX_SIZE] =
+            svt_read_literal(r, bit_depth, ACCT_STR);
+        for (int i = 1; i < n; ++i) {
+            int delta = svt_read_literal(r, bits, ACCT_STR);
+            if (delta && svt_read_bit(r, ACCT_STR)) delta = -delta;
+            int val = (int)nbr_ctx->
+                palette_colors[2 * PALETTE_MAX_SIZE + i - 1] + delta;
+            if (val < 0) val += max_val;
+            if (val >= max_val) val -= max_val;
+            nbr_ctx->palette_colors[2 * PALETTE_MAX_SIZE + i] = val;
+        }
+    }
+    else {
+        for (int i = 0; i < n; ++i) {
+            nbr_ctx->palette_colors[2 * PALETTE_MAX_SIZE + i] =
+                svt_read_literal(r, bit_depth, ACCT_STR);
+        }
+    }
+}
+
+void palette_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *pi,
+    int mi_row, int mi_col, SvtReader *r)
+{
+    ParseCtxt *parse_ctxt = (ParseCtxt *)dec_handle->pv_parse_ctxt;
+    FRAME_CONTEXT *frm_ctx = &parse_ctxt->cur_tile_ctx;
+    EbColorConfig *color_info = &dec_handle->seq_header.color_config;
+    const int num_planes = color_info->mono_chrome ? 1 : MAX_MB_PLANE;
+    ModeInfo_t *const mbmi = pi->mi;
+    const BlockSize bsize = mbmi->sb_type;
+    assert(allow_palette(dec_handle->frame_header.allow_screen_content_tools,
+                         bsize));
+    const int bsize_ctx = get_palette_bsize_ctx(bsize);
+
+    if (mbmi->mode == DC_PRED) {
+        const int palette_mode_ctx = get_palette_mode_ctx(pi);
+        const int modev = svt_read_symbol(
+            r, frm_ctx->palette_y_mode_cdf[bsize_ctx][palette_mode_ctx], 2,
+            ACCT_STR);
+        if (modev) {
+            mbmi->palette_size[0] =
+                svt_read_symbol(r, frm_ctx->palette_y_size_cdf[bsize_ctx],
+                    PALETTE_SIZES, ACCT_STR) +
+                2;
+            read_palette_colors_y(parse_ctxt, pi, dec_handle->seq_header.
+                color_config.bit_depth, mi_row, mi_col, r);
+        }
+    }
+    if (num_planes > 1 && mbmi->uv_mode == UV_DC_PRED &&
+        dec_is_chroma_reference(mi_row, mi_col, bsize,
+            color_info->subsampling_x, color_info->subsampling_y))
+    {
+        const int palette_uv_mode_ctx = (mbmi->palette_size[0] > 0);
+        const int modev = svt_read_symbol(
+            r, frm_ctx->palette_uv_mode_cdf[palette_uv_mode_ctx], 2, ACCT_STR);
+        if (modev) {
+            mbmi->palette_size[1] =
+                svt_read_symbol(r, frm_ctx->palette_uv_size_cdf[bsize_ctx],
+                    PALETTE_SIZES, ACCT_STR) +
+                2;
+            read_palette_colors_uv(parse_ctxt, pi, dec_handle->
+                seq_header.color_config.bit_depth, mi_row, mi_col, r);
+        }
+    }
+}
+
+static INLINE int filter_intra_allowed_bsize(EbDecHandle *dec_handle, BlockSize bs) {
+    if (!dec_handle->seq_header.enable_filter_intra || bs == BLOCK_INVALID)
+        return 0;
+
+    return block_size_wide[bs] <= 32 && block_size_high[bs] <= 32;
+}
+
+static INLINE int filter_intra_allowed(EbDecHandle *dec_handle, const ModeInfo_t *mbmi) {
+    return mbmi->mode == DC_PRED &&
+        mbmi->palette_size[0] == 0 &&
+        filter_intra_allowed_bsize(dec_handle, mbmi->sb_type);
 }
 
 void filter_intra_mode_info(EbDecHandle *dec_handle,
@@ -217,25 +458,38 @@ void read_cdef(EbDecHandle *dec_handle, SvtReader *r, PartitionInfo_t *xd,
     int mi_col, int mi_row, int8_t *cdef_strength)
 {
     ModeInfo_t *const mbmi = xd->mi;
-    if (mbmi->skip_mode || dec_handle->frame_header.coded_lossless ||
-        !dec_handle->seq_header.enable_cdef || dec_handle->frame_header.allow_intrabc)
+    if (mbmi->skip || dec_handle->frame_header.coded_lossless ||
+        !dec_handle->seq_header.enable_cdef ||
+        dec_handle->frame_header.allow_intrabc)
     {
         return;
     }
-
-    int cdf_size = block_size_wide[BLOCK_64X64] >> 2;
-    const int mask = ~(cdf_size - 1);
+    int cdf_size = mi_size_wide[BLOCK_64X64];
+    int row = mi_row & cdf_size;
+    int col = mi_col & cdf_size;
     const int index = dec_handle->seq_header.sb_size == BLOCK_128X128
-        ? !!(mi_col & mask) + 2 * !!(mi_row & mask) : 0;
-    if (cdef_strength[index] == -1)
-        svt_read_literal(r, dec_handle->frame_header.CDEF_params.cdef_bits, ACCT_STR);
+        ? !!(col) + 2 * !!(row) : 0;
+    if (cdef_strength[index] == -1) {
+        cdef_strength[index] = svt_read_literal(r, dec_handle->
+            frame_header.CDEF_params.cdef_bits, ACCT_STR);
+        int w4 = mi_size_wide[mbmi->sb_type];
+        int h4 = mi_size_high[mbmi->sb_type];
+        for (int i = row; i < row + h4; i += cdf_size) {
+            for (int j = col; j < col + w4; j += cdf_size) {
+                cdef_strength[!!(j & cdf_size) + 2 * !!(i & cdf_size)] =
+                    cdef_strength[index];
+            }
+        }
+    }
 }
 
-int read_delta_qindex(EbDecHandle *dec_handle, SvtReader *r,
-    ModeInfo_t *const mbmi, int mi_col, int mi_row)
+void read_delta_qindex(EbDecHandle *dec_handle, SvtReader *r,
+    ModeInfo_t *const mbmi, int mi_col, int mi_row,
+    int32_t *cur_qind, int32_t *sb_delta_q)
 {
     int sign, abs, reduced_delta_qindex = 0;
     BlockSize bsize = mbmi->sb_type;
+    DeltaQParams    *delta_q_params = &dec_handle->frame_header.delta_q_params;
     const int b_col = mi_col & (dec_handle->seq_header.sb_mi_size - 1);
     const int b_row = mi_row & (dec_handle->seq_header.sb_mi_size - 1);
     const int read_delta_q_flag = (b_col == 0 && b_row == 0);
@@ -258,18 +512,22 @@ int read_delta_qindex(EbDecHandle *dec_handle, SvtReader *r,
         else
             sign = 1;
         reduced_delta_qindex = sign ? -abs : abs;
+        reduced_delta_qindex = clamp(*cur_qind +
+             (reduced_delta_qindex << delta_q_params->delta_q_res), 1, MAXQ);
+        *sb_delta_q = *cur_qind = reduced_delta_qindex;
     }
-    return reduced_delta_qindex;
 }
 
 int read_delta_lflevel(EbDecHandle *dec_handle, SvtReader *r,
-    AomCdfProb *cdf, ModeInfo_t *mbmi, int mi_col, int mi_row)
+    AomCdfProb *cdf, ModeInfo_t *mbmi, int mi_col, int mi_row,
+    int32_t delta_lf)
 {
     int reduced_delta_lflevel = 0;
     const BlockSize bsize = mbmi->sb_type;
     const int b_col = mi_col & (dec_handle->seq_header.sb_mi_size - 1);
     const int b_row = mi_row & (dec_handle->seq_header.sb_mi_size - 1);
     const int read_delta_lf_flag = (b_col == 0 && b_row == 0);
+    DeltaLFParams *delta_lf_params = &dec_handle->frame_header.delta_lf_params;
 
     if ((bsize != dec_handle->seq_header.sb_size || mbmi->skip == 0) &&
         read_delta_lf_flag)
@@ -282,6 +540,9 @@ int read_delta_lflevel(EbDecHandle *dec_handle, SvtReader *r,
         }
         const int sign = abs ? svt_read_bit(r, ACCT_STR) : 1;
         reduced_delta_lflevel = sign ? -abs : abs;
+        reduced_delta_lflevel = clamp(delta_lf +
+            (reduced_delta_lflevel << delta_lf_params->delta_lf_res),
+            -MAX_LOOP_FILTER, MAX_LOOP_FILTER);
     }
     return reduced_delta_lflevel;
 }
@@ -333,71 +594,36 @@ static void read_delta_params(EbDecHandle *dec_handle, SvtReader *r,
     DeltaQParams    *delta_q_params = &dec_handle->frame_header.delta_q_params;
     DeltaLFParams   *delta_lf_params = &dec_handle->frame_header.delta_lf_params;
     SBInfo          *sb_info = xd->sb_info;
+    ModeInfo_t *const mbmi = &xd->mi[0];
 
     if (delta_q_params->delta_q_present) {
-        ModeInfo_t *const mbmi = &xd->mi[0];
-        int current_qindex;
-        int base_qindex = dec_handle->frame_header.quantization_params.base_q_idx;
+        read_delta_qindex(dec_handle, r, mbmi, mi_col, mi_row,
+            &parse_ctxt->parse_nbr4x4_ctxt.cur_q_ind, &sb_info->sb_delta_q[0]);
+    }
 
-        assert(0);
-        //delta_q_res should be left shifted instead of being multiplied - check logic
-        int delta_q = read_delta_qindex(dec_handle, r, mbmi, mi_col, mi_row);
-        sb_info->sb_delta_q[0] = delta_q * delta_q_params->delta_q_res;
-        current_qindex = base_qindex + sb_info->sb_delta_q[0];
-        /* Normative: Clamp to [1,MAXQ] to not interfere with lossless mode */
-        /* TODO: Should add cur q idx and remove this repetitive? */
-        sb_info->sb_delta_q[0] = clamp(current_qindex, 1, MAXQ) - base_qindex;
 
-        FRAME_CONTEXT *const ec_ctx = &parse_ctxt->cur_tile_ctx;
+    FRAME_CONTEXT *const ec_ctx = &parse_ctxt->cur_tile_ctx;
 
-        if (delta_lf_params->delta_lf_present) {
-            if (delta_lf_params->delta_lf_multi) {
-                EbColorConfig *color_info = &dec_handle->seq_header.color_config;
-                int num_planes = color_info->mono_chrome ? 1 : MAX_MB_PLANE;
-                const int frame_lf_count =
-                    num_planes > 1 ? FRAME_LF_COUNT : FRAME_LF_COUNT - 2;
-                for (int lf_id = 0; lf_id < frame_lf_count; ++lf_id) {
-                    int tmp_lvl;
-                    int base_lvl;
-                    if (lf_id < 2)
-                        base_lvl = dec_handle->frame_header.loop_filter_params.filter_level[lf_id];
-                    else if (lf_id == 2)
-                        base_lvl = dec_handle->frame_header.loop_filter_params.filter_level_u;
-                    else
-                        base_lvl = dec_handle->frame_header.loop_filter_params.filter_level_v;
-
-                    assert(0);
-                    //delta_lf_res should be left shifted instead of being multiplied - check logic
-                    sb_info->sb_delta_lf[lf_id] =
-                        read_delta_lflevel(dec_handle, r, ec_ctx->delta_lf_multi_cdf[lf_id],
-                                           mbmi, mi_col, mi_row) *
-                                           delta_lf_params->delta_lf_res;
-                    tmp_lvl = base_lvl + sb_info->sb_delta_lf[lf_id];
-                    tmp_lvl = clamp(tmp_lvl, -MAX_LOOP_FILTER, MAX_LOOP_FILTER);
-                    sb_info->sb_delta_lf[lf_id] = tmp_lvl - base_lvl;
-                }
-            } else {
-                int tmp_lvl;
-                int base_lvl = dec_handle->frame_header.loop_filter_params.filter_level[0];
-                sb_info->sb_delta_lf[0] =
-                                read_delta_lflevel(dec_handle, r, ec_ctx->delta_lf_cdf,
-                                                    mbmi, mi_col, mi_row) *
-                                delta_lf_params->delta_lf_res;
-                tmp_lvl = base_lvl + sb_info->sb_delta_lf[0];
-                tmp_lvl = clamp(tmp_lvl, -MAX_LOOP_FILTER, MAX_LOOP_FILTER);
-                sb_info->sb_delta_lf[0] = tmp_lvl - base_lvl;
-            }
+    int frame_lf_count = 1;
+    if (delta_lf_params->delta_lf_present) {
+        if (delta_lf_params->delta_lf_multi) {
+            EbColorConfig *color_info = &dec_handle->seq_header.color_config;
+            int num_planes = color_info->mono_chrome ? 1 : MAX_MB_PLANE;
+            frame_lf_count =
+                num_planes > 1 ? FRAME_LF_COUNT : FRAME_LF_COUNT - 2;
+        }
+        for (int lf_id = 0; lf_id < frame_lf_count; ++lf_id) {
+            parse_ctxt->parse_nbr4x4_ctxt.delta_lf[lf_id] =
+                sb_info->sb_delta_lf[lf_id] = read_delta_lflevel(dec_handle, r,
+                    ec_ctx->delta_lf_multi_cdf[lf_id], mbmi, mi_col, mi_row,
+                    parse_ctxt->parse_nbr4x4_ctxt.delta_lf[lf_id]);
         }
     }
 }
 
-int is_directional_mode(PredictionMode mode) {
-    return mode >= V_PRED && mode <= D67_PRED;
-}
-
 int intra_angle_info(SvtReader *r, AomCdfProb *cdf, PredictionMode mode, BlockSize bsize) {
     int angleDeltaY = 0;
-    if (use_angle_delta(bsize) && is_directional_mode(mode)) {
+    if (av1_use_angle_delta(bsize) && av1_is_directional_mode(mode)) {
         const int sym = svt_read_symbol(r, cdf, 2 * MAX_ANGLE_DELTA + 1, ACCT_STR);
         angleDeltaY = sym - MAX_ANGLE_DELTA;
     }
@@ -515,8 +741,100 @@ PredictionMode getMode(PredictionMode yMode, int refList) {
     return compMode;
 }
 
-void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd, int mi_row,
-    int mi_col, SvtReader *r, int8_t *cdef_strength)
+static INLINE void update_palette_context(EbDecHandle *dec_handle,
+    int mi_row, int mi_col, ModeInfo_t *mi)
+{
+    BlockSize bsize = mi->sb_type;
+    ParseCtxt *parse_ctx = (ParseCtxt *)dec_handle->pv_parse_ctxt;
+    ParseNbr4x4Ctxt *ngr_ctx = &parse_ctx->parse_nbr4x4_ctxt;
+    const int bw = mi_size_wide[bsize];
+    const int bh = mi_size_high[bsize];
+    for (int plane = 0; plane < MAX_MB_PLANE; plane++) {
+        uint16_t *above_pal_col = ngr_ctx->above_palette_colors[plane] +
+            (PALETTE_MAX_SIZE *((mi_col - parse_ctx->sb_col_mi) % 16));
+        uint16_t *left_pal_col = ngr_ctx->left_palette_colors[plane] +
+            (PALETTE_MAX_SIZE * (mi_row - parse_ctx->sb_row_mi));
+        for (int i = 0; i < bw; i++) {
+            memcpy(above_pal_col, &ngr_ctx->
+                palette_colors[plane * PALETTE_MAX_SIZE],
+                mi->palette_size[plane != 0] * sizeof(uint16_t));
+            above_pal_col += PALETTE_MAX_SIZE;
+        }
+        for (int i = 0; i < bh; i++) {
+            memcpy(left_pal_col, &ngr_ctx->
+                palette_colors[plane * PALETTE_MAX_SIZE],
+                mi->palette_size[plane != 0] * sizeof(uint16_t));
+            left_pal_col += PALETTE_MAX_SIZE;
+        }
+    }
+}
+
+static INLINE AomCdfProb *get_y_mode_cdf(FRAME_CONTEXT *tile_ctx,
+    const ModeInfo_t *above_mi, const ModeInfo_t *left_mi)
+{
+    const PredictionMode above = above_mi ? above_mi->mode : DC_PRED;
+    const PredictionMode left = left_mi ? left_mi->mode : DC_PRED;
+    const int above_ctx = intra_mode_context[above];
+    const int left_ctx = intra_mode_context[left];
+    return tile_ctx->kf_y_cdf[above_ctx][left_ctx];
+}
+
+
+/*TODO: Move to common after segregating from encoder */
+static INLINE PredictionMode dec_get_uv_mode(UvPredictionMode mode) {
+    assert(mode < UV_INTRA_MODES);
+    static const PredictionMode uv2y[] = {
+      DC_PRED,        // UV_DC_PRED
+      V_PRED,         // UV_V_PRED
+      H_PRED,         // UV_H_PRED
+      D45_PRED,       // UV_D45_PRED
+      D135_PRED,      // UV_D135_PRED
+      D113_PRED,      // UV_D113_PRED
+      D157_PRED,      // UV_D157_PRED
+      D203_PRED,      // UV_D203_PRED
+      D67_PRED,       // UV_D67_PRED
+      SMOOTH_PRED,    // UV_SMOOTH_PRED
+      SMOOTH_V_PRED,  // UV_SMOOTH_V_PRED
+      SMOOTH_H_PRED,  // UV_SMOOTH_H_PRED
+      PAETH_PRED,     // UV_PAETH_PRED
+      DC_PRED,        // UV_CFL_PRED
+      INTRA_INVALID,  // UV_INTRA_MODES
+      INTRA_INVALID,  // UV_MODE_INVALID
+    };
+    return uv2y[mode];
+}
+
+static INLINE TxType intra_mode_to_tx_type(const ModeInfo_t *mbmi, PlaneType plane_type) {
+    static const TxType _intra_mode_to_tx_type[INTRA_MODES] = {
+        DCT_DCT,    // DC
+        ADST_DCT,   // V
+        DCT_ADST,   // H
+        DCT_DCT,    // D45
+        ADST_ADST,  // D135
+        ADST_DCT,   // D117
+        DCT_ADST,   // D153
+        DCT_ADST,   // D207
+        ADST_DCT,   // D63
+        ADST_ADST,  // SMOOTH
+        ADST_DCT,   // SMOOTH_V
+        DCT_ADST,   // SMOOTH_H
+        ADST_ADST,  // PAETH
+    };
+    const PredictionMode mode =
+        (plane_type == PLANE_TYPE_Y) ? mbmi->mode : dec_get_uv_mode(mbmi->uv_mode);
+    assert(mode < INTRA_MODES);
+    return _intra_mode_to_tx_type[mode];
+}
+
+static INLINE int allow_intrabc(const EbDecHandle *dec_handle) {
+    return  (dec_handle->frame_header.frame_type == KEY_FRAME
+        || dec_handle->frame_header.frame_type == INTRA_ONLY_FRAME)
+        && dec_handle->seq_header.seq_force_screen_content_tools
+        && dec_handle->frame_header.allow_intrabc;
+}
+
+void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd,
+    int mi_row, int mi_col, SvtReader *r, int8_t *cdef_strength)
 {
     ParseCtxt *parse_ctxt = (ParseCtxt *)dec_handle->pv_parse_ctxt;
     ModeInfo_t *const mbmi = xd->mi;
@@ -526,9 +844,8 @@ void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd, int mi_
     SegmentationParams *const seg = &dec_handle->frame_header.segmentation_params;
     EbColorConfig color_config = dec_handle->seq_header.color_config;
     uint8_t     *lossless_array = &dec_handle->frame_header.lossless_array[0];
-    IntMv_dec ref_mvs[MODE_CTX_REF_FRAMES][MAX_MV_REF_CANDIDATES] = { { { 0 } } };
+    IntMvDec ref_mvs[INTRA_FRAME + 1][MAX_MV_REF_CANDIDATES] = { { { 0 } } };
     int16_t inter_mode_ctx[MODE_CTX_REF_FRAMES];
-    MvReferenceFrame ref_frame = av1_ref_frame_type(mbmi->ref_frame);
     MvCount *mv_cnt = (MvCount*)malloc(sizeof(MvCount));
 
     if (seg->seg_id_pre_skip) {
@@ -550,6 +867,9 @@ void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd, int mi_
     mbmi->ref_frame[0] = INTRA_FRAME;
     mbmi->ref_frame[1] = NONE_FRAME;
 
+    mbmi->palette_size[0] = 0;
+    mbmi->palette_size[1] = 0;
+
     mbmi->use_intrabc = 0;
     if (allow_intrabc(dec_handle))
         mbmi->use_intrabc = svt_read_symbol(r, parse_ctxt->cur_tile_ctx.intrabc_cdf,
@@ -560,12 +880,13 @@ void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd, int mi_
         mbmi->uv_mode = UV_DC_PRED;
         mbmi->motion_mode = SIMPLE_TRANSLATION;
         mbmi->compound_mode = COMPOUND_AVERAGE;
-        dec_handle->frame_header.interpolation_filter = BILINEAR;
-        IntMv_dec global_mvs[2];
-        av1_find_mv_refs(dec_handle, xd, ref_frame, xd->ref_mv_stack,
+        mbmi->interp_filters = av1_broadcast_interp_filter(BILINEAR);
+        IntMvDec global_mvs[2];
+        av1_find_mv_refs(dec_handle, xd, INTRA_FRAME, xd->ref_mv_stack,
             ref_mvs, global_mvs, mi_row, mi_col,
             inter_mode_ctx, mv_cnt);
-        assert(0);
+
+        assign_intrabc_mv(dec_handle, ref_mvs, xd, mi_row, mi_col, r);
     }
     else {
         AomCdfProb *y_mode_cdf = get_y_mode_cdf(&parse_ctxt->cur_tile_ctx,
@@ -589,8 +910,10 @@ void intra_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t *xd, int mi_
                 dec_get_uv_mode(mbmi->uv_mode), bsize);
         }
 
-        if (allow_palette(dec_handle->frame_header.allow_screen_content_tools, bsize))
-            palette_mode_info(/*dec_handle, mi_row, mi_col, r*/);
+        if (allow_palette(dec_handle->frame_header.allow_screen_content_tools, bsize)) {
+            palette_mode_info(dec_handle, xd, mi_row, mi_col, r);
+            update_palette_context(dec_handle, mi_row, mi_col, mbmi);
+        }
         filter_intra_mode_info(dec_handle, xd, r);
     }
     free(mv_cnt);
@@ -672,19 +995,51 @@ int read_inter_segment_id(EbDecHandle *dec_handle, PartitionInfo_t *xd,
     return segment_id;
 }
 
-//static void get_mv_projection(MV *output, MV ref, int num, int den) {
-//    den = AOMMIN(den, MAX_FRAME_DISTANCE);
-//    num = num > 0 ? AOMMIN(num, MAX_FRAME_DISTANCE)
-//        : AOMMAX(num, -MAX_FRAME_DISTANCE);
-//    const int mv_row =
-//        ROUND_POWER_OF_TWO_SIGNED(ref.row * num * div_mult[den], 14);
-//    const int mv_col =
-//        ROUND_POWER_OF_TWO_SIGNED(ref.col * num * div_mult[den], 14);
-//    const int clamp_max = MV_UPP - 1;
-//    const int clamp_min = MV_LOW + 1;
-//    output->row = (int16_t)clamp(mv_row, clamp_min, clamp_max);
-//    output->col = (int16_t)clamp(mv_col, clamp_min, clamp_max);
-//}
+void get_mv_projection(MV *output, MV ref, int num, int den) {
+    den = AOMMIN(den, MAX_FRAME_DISTANCE);
+    num = num > 0 ? AOMMIN(num, MAX_FRAME_DISTANCE)
+        : AOMMAX(num, -MAX_FRAME_DISTANCE);
+    const int mv_row =
+        ROUND_POWER_OF_TWO_SIGNED(ref.row * num * div_mult[den], 14);
+    const int mv_col =
+        ROUND_POWER_OF_TWO_SIGNED(ref.col * num * div_mult[den], 14);
+    const int clamp_max = MV_UPP - 1;
+    const int clamp_min = MV_LOW + 1;
+    output->row = (int16_t)clamp(mv_row, clamp_min, clamp_max);
+    output->col = (int16_t)clamp(mv_col, clamp_min, clamp_max);
+}
+
+static int get_block_position(FrameHeader *frame_info, int *mi_r, int *mi_c, int blk_row,
+    int blk_col, MV mv, int sign_bias) {
+    const int32_t base_blk_row = (blk_row >> 3) << 3;
+    const int32_t base_blk_col = (blk_col >> 3) << 3;
+
+    const int row_offset = (mv.row >= 0) ? (mv.row >> (4 + MI_SIZE_LOG2))
+        : -((-mv.row) >> (4 + MI_SIZE_LOG2));
+
+    const int col_offset = (mv.col >= 0) ? (mv.col >> (4 + MI_SIZE_LOG2))
+        : -((-mv.col) >> (4 + MI_SIZE_LOG2));
+
+    const int32_t row =
+        (sign_bias == 1) ? blk_row - row_offset : blk_row + row_offset;
+    const int32_t col =
+        (sign_bias == 1) ? blk_col - col_offset : blk_col + col_offset;
+
+    if (row < 0 || (uint32_t)row >= (frame_info->mi_rows >> 1) || col < 0 ||
+        (uint32_t)col >= (frame_info->mi_cols >> 1))
+        return 0;
+
+    if (row < base_blk_row - (MAX_OFFSET_HEIGHT >> 3) ||
+        row >= base_blk_row + 8 + (MAX_OFFSET_HEIGHT >> 3) ||
+        col < base_blk_col - (MAX_OFFSET_WIDTH >> 3) ||
+        col >= base_blk_col + 8 + (MAX_OFFSET_WIDTH >> 3))
+        return 0;
+
+    *mi_r = row;
+    *mi_c = col;
+
+    return 1;
+}
 
 // Note: motion_filed_projection finds motion vectors of current frame's
 // reference frame, and projects them to current frame. To make it clear,
@@ -693,73 +1048,70 @@ int read_inter_segment_id(EbDecHandle *dec_handle, PartitionInfo_t *xd,
 // Call ref_offset as frame distances between start frame and its reference
 // frames.
 static int motion_field_projection(EbDecHandle *dec_handle,
-    MvReferenceFrame start_frame, int dir)
+                                   MvReferenceFrame start_frame, int dir)
 {
-    (void)dir;
-    //TemporalMvRef *tpl_mvs_base = dec_handle->master_frame_buf.tpl_mvs;
-    //int ref_offset[REF_FRAMES] = { 0 };
+    FrameHeader *frame_info = &dec_handle->frame_header;
 
-    const EbDecPicBuf *const start_frame_buf =
-        get_ref_frame_buf(dec_handle, start_frame);
+    TemporalMvRef *tpl_mvs_base = dec_handle->master_frame_buf.tpl_mvs;
+    int ref_offset[REF_FRAMES] = { 0 };
+
+    const EbDecPicBuf *const start_frame_buf
+        = get_ref_frame_buf(dec_handle, start_frame);
+
     if (start_frame_buf == NULL) return 0;
 
-    /* TODO: add for 2nd frame onwards */
-    return 0;
-#if 0
     if (start_frame_buf->frame_type == KEY_FRAME ||
         start_frame_buf->frame_type == INTRA_ONLY_FRAME)
         return 0;
 
-    if (start_frame_buf->mi_rows != cm->mi_rows ||
-        start_frame_buf->mi_cols != cm->mi_cols)
-        return 0;
-
     const int start_frame_order_hint = start_frame_buf->order_hint;
-    const unsigned int *const ref_order_hints =
-        &start_frame_buf->ref_order_hints[0];
-    const int cur_order_hint = cm->cur_frame->order_hint;
+
+    const unsigned int *const ref_order_hints = &start_frame_buf->ref_order_hints[0];
+
+    const int cur_order_hint = dec_handle->cur_pic_buf[0]->order_hint;
+
     int start_to_current_frame_offset = get_relative_dist(
-        &cm->seq_params.order_hint_info, start_frame_order_hint, cur_order_hint);
+        &dec_handle->seq_header.order_hint_info, start_frame_order_hint, cur_order_hint);
 
     for (MvReferenceFrame rf = LAST_FRAME; rf <= INTER_REFS_PER_FRAME; ++rf) {
-        ref_offset[rf] = get_relative_dist(&cm->seq_params.order_hint_info,
-            start_frame_order_hint,
-            ref_order_hints[rf - LAST_FRAME]);
-        }
+        ref_offset[rf] = get_relative_dist(&dec_handle->seq_header.order_hint_info,
+            start_frame_order_hint, ref_order_hints[rf - LAST_FRAME]);
+    }
 
     if (dir == 2) start_to_current_frame_offset = -start_to_current_frame_offset;
 
-    MV_REF *mv_ref_base = start_frame_buf->mvs;
-    const int mvs_rows = (cm->mi_rows + 1) >> 1;
-    const int mvs_cols = (cm->mi_cols + 1) >> 1;
+    TemporalMvRef *mv_ref_base = start_frame_buf->mvs;
+    const int mvs_rows = (frame_info->mi_rows + 1) >> 1;
+    const int mvs_cols = (frame_info->mi_cols + 1) >> 1;
 
     for (int blk_row = 0; blk_row < mvs_rows; ++blk_row) {
         for (int blk_col = 0; blk_col < mvs_cols; ++blk_col) {
-            MV_REF *mv_ref = &mv_ref_base[blk_row * mvs_cols + blk_col];
-            MV fwd_mv = mv_ref->mv.as_mv;
+            TemporalMvRef *mv_ref = &mv_ref_base[blk_row * mvs_cols + blk_col];
+            MV fwd_mv = mv_ref->mf_mv0.as_mv;
 
-            if (mv_ref->ref_frame > INTRA_FRAME) {
-                int_mv this_mv;
+            if (mv_ref->ref_frame_offset > INTRA_FRAME) {
+                IntMvDec this_mv;
                 int mi_r, mi_c;
-                const int ref_frame_offset = ref_offset[mv_ref->ref_frame];
+                const int ref_frame_offset = ref_offset[mv_ref->ref_frame_offset];
 
-                int pos_valid =
-                    abs(ref_frame_offset) <= MAX_FRAME_DISTANCE &&
+                int pos_valid = abs(ref_frame_offset) <= MAX_FRAME_DISTANCE &&
                     ref_frame_offset > 0 &&
                     abs(start_to_current_frame_offset) <= MAX_FRAME_DISTANCE;
 
                 if (pos_valid) {
                     get_mv_projection(&this_mv.as_mv, fwd_mv,
-                        start_to_current_frame_offset, ref_frame_offset);
-                    pos_valid = get_block_position(cm, &mi_r, &mi_c, blk_row, blk_col,
-                        this_mv.as_mv, dir >> 1);
-                    }
+                                      start_to_current_frame_offset,
+                                      ref_frame_offset);
+
+                    pos_valid = get_block_position(frame_info, &mi_r, &mi_c,
+                        blk_row, blk_col, this_mv.as_mv, dir >> 1);
+                }
 
                 if (pos_valid) {
-                    const int mi_offset = mi_r * (cm->mi_stride >> 1) + mi_c;
+                    const int mi_offset = mi_r * (frame_info->mi_stride >> 1) + mi_c;
 
-                    tpl_mvs_base[mi_offset].mfmv0.as_mv.row = fwd_mv.row;
-                    tpl_mvs_base[mi_offset].mfmv0.as_mv.col = fwd_mv.col;
+                    tpl_mvs_base[mi_offset].mf_mv0.as_mv.row = fwd_mv.row;
+                    tpl_mvs_base[mi_offset].mf_mv0.as_mv.col = fwd_mv.col;
                     tpl_mvs_base[mi_offset].ref_frame_offset = ref_frame_offset;
                     }
                 }
@@ -767,7 +1119,6 @@ static int motion_field_projection(EbDecHandle *dec_handle,
         }
 
     return 1;
-#endif
 }
 
 void svt_setup_motion_field(EbDecHandle *dec_handle) {
@@ -810,10 +1161,9 @@ void svt_setup_motion_field(EbDecHandle *dec_handle) {
 
     int ref_stamp = MFMV_STACK_SIZE - 1;
 
-    return; /* TODO: Removed! */
+
 
     if (ref_buf[LAST_FRAME - LAST_FRAME] != NULL) {
-        assert(0); //add ref_order_hints population
         const int alt_of_lst_order_hint =
             ref_buf[LAST_FRAME - LAST_FRAME]
             ->ref_order_hints[ALTREF_FRAME - LAST_FRAME];
@@ -846,9 +1196,10 @@ void svt_setup_motion_field(EbDecHandle *dec_handle) {
 }
 
 void intra_block_mode_info(EbDecHandle *dec_handle, int mi_row,
-    int mi_col, PartitionInfo_t* xd, ModeInfo_t *mbmi, SvtReader *r)
+    int mi_col, PartitionInfo_t* xd, SvtReader *r)
 {
     ParseCtxt *parse_ctxt = (ParseCtxt *)dec_handle->pv_parse_ctxt;
+    ModeInfo_t *mbmi = xd->mi;
     const BlockSize bsize = mbmi->sb_type;
     mbmi->ref_frame[0] = INTRA_FRAME;
     mbmi->ref_frame[1] = NONE_FRAME;
@@ -878,8 +1229,13 @@ void intra_block_mode_info(EbDecHandle *dec_handle, int mi_row,
             dec_get_uv_mode(mbmi->uv_mode), bsize);
     }
 
-    if (allow_palette(dec_handle->frame_header.allow_screen_content_tools, bsize))
-        palette_mode_info(/*dec_handle, mi_row, mi_col, r*/);
+    mbmi->palette_size[0] = 0;
+    mbmi->palette_size[1] = 0;
+
+    if (allow_palette(dec_handle->frame_header.allow_screen_content_tools, bsize)) {
+        palette_mode_info(dec_handle, xd, mi_row, mi_col, r);
+        update_palette_context(dec_handle, mi_row, mi_col, mbmi);
+    }
 
     filter_intra_mode_info(dec_handle, xd, r);
 }
@@ -936,22 +1292,89 @@ void inter_frame_mode_info(EbDecHandle *dec_handle, PartitionInfo_t * pi,
     if (inter_block)
         inter_block_mode_info(dec_handle, pi, mi_row, mi_col, r);
     else
-        intra_block_mode_info(dec_handle, mi_row, mi_col, pi, mbmi, r);
+        intra_block_mode_info(dec_handle, mi_row, mi_col, pi, r);
 }
 
-void mode_info(EbDecHandle *decHandle, PartitionInfo_t *part_info, uint32_t mi_row,
+static void intra_copy_frame_mvs(EbDecHandle *dec_handle, int mi_row, int mi_col,
+    int x_mis, int y_mis) {
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    const int frame_mvs_stride = ROUND_POWER_OF_TWO(frame_info->mi_cols, 1);
+    TemporalMvRef *frame_mvs =
+        dec_handle->cur_pic_buf[0]->mvs + (mi_row >> 1) * frame_mvs_stride + (mi_col >> 1);
+    x_mis = ROUND_POWER_OF_TWO(x_mis, 1);
+    y_mis = ROUND_POWER_OF_TWO(y_mis, 1);
+
+    for (int h = 0; h < y_mis; h++) {
+        TemporalMvRef *mv = frame_mvs;
+        for (int w = 0; w < x_mis; w++) {
+            mv->ref_frame_offset = NONE_FRAME;
+            mv++;
+        }
+        frame_mvs += frame_mvs_stride;
+    }
+}
+
+void inter_copy_frame_mvs(EbDecHandle *dec_handle, ModeInfo_t *mi,
+    int mi_row, int mi_col, int x_mis, int y_mis) {
+
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    const int frame_mvs_stride = ROUND_POWER_OF_TWO(frame_info->mi_cols, 1);
+    TemporalMvRef *frame_mvs =
+        dec_handle->cur_pic_buf[0]->mvs + (mi_row >> 1) * frame_mvs_stride + (mi_col >> 1);
+    x_mis = ROUND_POWER_OF_TWO(x_mis, 1);
+    y_mis = ROUND_POWER_OF_TWO(y_mis, 1);
+
+    TemporalMvRef *mv;
+    TemporalMvRef cur_mv;
+    cur_mv.ref_frame_offset = NONE_FRAME;
+    cur_mv.mf_mv0.as_int = 0;
+
+    for (int idx = 0; idx < 2; ++idx) {
+        MvReferenceFrame ref_frame = mi->ref_frame[idx];
+        if (ref_frame > INTRA_FRAME) {
+            int8_t ref_idx = dec_handle->master_frame_buf.ref_frame_side[ref_frame];
+            if (ref_idx) continue;
+            if ((abs(mi->mv[idx].as_mv.row) > REFMVS_LIMIT) ||
+                (abs(mi->mv[idx].as_mv.col) > REFMVS_LIMIT))
+                continue;
+            cur_mv.ref_frame_offset = ref_frame;
+            cur_mv.mf_mv0.as_int = mi->mv[idx].as_int;
+        }
+    }
+    for (int h = 0; h < y_mis; h++) {
+        mv = frame_mvs;
+        for (int w = 0; w < x_mis; w++) {
+            *mv = cur_mv;
+            mv++;
+        }
+        frame_mvs += frame_mvs_stride;
+    }
+}
+
+void mode_info(EbDecHandle *dec_handle, PartitionInfo_t *part_info, uint32_t mi_row,
     uint32_t mi_col, SvtReader *r, int8_t *cdef_strength)
 {
     ModeInfo_t *mi = part_info->mi;
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    //BlockSize bsize = mi->sb_type
     mi->use_intrabc = 0;
+    const uint32_t bw = mi_size_wide[mi->sb_type];
+    const uint32_t bh = mi_size_high[mi->sb_type];
+    const int x_mis = AOMMIN(bw, frame_info->mi_cols - mi_col);
+    const int y_mis = AOMMIN(bh, frame_info->mi_rows - mi_row);
 
-    if (decHandle->frame_header.frame_type == KEY_FRAME
-        || decHandle->frame_header.frame_type == INTRA_ONLY_FRAME)
+    if (frame_info->frame_type == KEY_FRAME ||
+        frame_info->frame_type == INTRA_ONLY_FRAME)
     {
-        intra_frame_mode_info(decHandle, part_info, mi_row, mi_col, r, cdef_strength);
+        intra_frame_mode_info(dec_handle, part_info, mi_row, mi_col, r,
+            cdef_strength);
+        intra_copy_frame_mvs(dec_handle, mi_row, mi_col, x_mis, y_mis);
     }
-    else
-        inter_frame_mode_info(decHandle, part_info, mi_row, mi_col, r, cdef_strength);
+    else {
+        inter_frame_mode_info(dec_handle, part_info, mi_row, mi_col, r,
+            cdef_strength);
+        inter_copy_frame_mvs(dec_handle, mi, mi_row, mi_col, x_mis, y_mis);
+    }
 }
 
 TxSize read_tx_size(EbDecHandle *dec_handle, PartitionInfo_t *xd,
@@ -1009,7 +1432,7 @@ void update_chroma_trans_info(EbDecHandle *dec_handle,
 
     /* TODO: Make plane loop and avoid the unroll */
     for (int idy = 0; idy < max_blocks_high; idy += height) {
-        for (int idx = 0; idx < max_blocks_wide; idx += width) {
+        for (int idx = 0; idx < max_blocks_wide; idx += width, force_split_cnt++) {
 
             num_chroma_tus = 0;
 
@@ -1042,8 +1465,6 @@ void update_chroma_trans_info(EbDecHandle *dec_handle,
 
             parse_ctx->num_tus[AOM_PLANE_U][force_split_cnt] = num_chroma_tus;
             parse_ctx->num_tus[AOM_PLANE_V][force_split_cnt] = num_chroma_tus;
-
-            force_split_cnt++;
         }
     }
 
@@ -1161,7 +1582,7 @@ void update_flat_trans_info(EbDecHandle *dec_handle, PartitionInfo_t *part_info,
 
     /* TODO: Make plane loop and avoid the unroll */
     for (int idy = 0; idy < max_blocks_high; idy += height) {
-        for (int idx = 0; idx < max_blocks_wide; idx += width) {
+        for (int idx = 0; idx < max_blocks_wide; idx += width, force_split_cnt++) {
 
             num_luma_tus = 0;
             num_chroma_tus = 0;
@@ -1215,9 +1636,6 @@ void update_flat_trans_info(EbDecHandle *dec_handle, PartitionInfo_t *part_info,
 
             parse_ctx->num_tus[AOM_PLANE_U][force_split_cnt] = num_chroma_tus;
             parse_ctx->num_tus[AOM_PLANE_V][force_split_cnt] = num_chroma_tus;
-
-            // TODO: Move to beginning because increment might be missed for monochrome case
-            force_split_cnt++;
         }
     }
 
@@ -1370,7 +1788,7 @@ void parse_transform_type(EbDecHandle *dec_handle, PartitionInfo_t *xd,
     }
 }
 
-const ScanOrder* get_scan(TxSize tx_size, TxType tx_type) {
+static INLINE const ScanOrder* get_scan(TxSize tx_size, TxType tx_type) {
     return &av1_scan_orders[tx_size][tx_type];
 }
 
@@ -1469,7 +1887,7 @@ void update_coeff_ctx(EbDecHandle *dec_handle, int plane, PartitionInfo_t *pi,
 }
 
 static INLINE int rec_eob_pos(const int eob_token, const int extra) {
-    int eob = k_eob_group_start[eob_token];
+    int eob = eb_k_eob_group_start[eob_token];
     if (eob > 2)
         eob += extra;
     return eob;
@@ -1488,7 +1906,7 @@ static INLINE int get_lower_levels_ctx_2d(const uint8_t *levels,
     mag += AOMMIN(levels[(2 << bwl) + (2 << TX_PAD_HOR_LOG2)], 3);  // { 2, 0 }
 
     const int ctx = AOMMIN((mag + 1) >> 1, 4);
-    return ctx + av1_nz_map_ctx_offset[tx_size][coeff_idx];
+    return ctx + eb_av1_nz_map_ctx_offset[tx_size][coeff_idx];
 }
 static INLINE int get_lower_levels_ctx(const uint8_t *levels,
     int coeff_idx, int bwl, TxSize tx_size, TxClass tx_class)
@@ -1617,6 +2035,13 @@ static INLINE void read_coeffs_reverse(SvtReader *r, TxSize tx_size,
     }
 }
 
+static INLINE int get_lower_levels_ctx_eob(int bwl, int height, int scan_idx) {
+    if (scan_idx == 0) return 0;
+    if (scan_idx <= (height << bwl) / 8) return 1;
+    if (scan_idx <= (height << bwl) / 4) return 2;
+    return 3;
+}
+
 uint16_t parse_coeffs(EbDecHandle *dec_handle, PartitionInfo_t *xd, SvtReader *r,
     uint32_t blk_row, uint32_t blk_col, int above_off, int left_off, int plane,
     int txb_skip_ctx, int dc_sign_ctx, TxSize tx_size, int32_t *coeff_buf,
@@ -1712,7 +2137,7 @@ uint16_t parse_coeffs(EbDecHandle *dec_handle, PartitionInfo_t *xd, SvtReader *r
         break;
     }
 
-    int eob_shift = k_eob_offset_bits[eob_pt];
+    int eob_shift = eb_k_eob_offset_bits[eob_pt];
     if (eob_shift > 0) {
         const int eob_ctx = eob_pt;
         int bit = svt_read_symbol(
@@ -1808,17 +2233,6 @@ uint16_t parse_coeffs(EbDecHandle *dec_handle, PartitionInfo_t *xd, SvtReader *r
     return eob;
 }
 
-void palette_tokens(int plane) {
-    assert(plane == 0 || plane == 1);
-    (void)plane;
-    // TO-DO
-}
-
-void get_palette_color_context()
-{
-    //TO-DO
-}
-
 int partition_plane_context(int mi_row,
     int mi_col, BlockSize bsize, ParseCtxt *parse_ctxt)
 {
@@ -1903,22 +2317,20 @@ PartitionType parse_partition_type(uint32_t blk_row, uint32_t blk_col, SvtReader
         assert(cdf[1] == AOM_ICDF(CDF_PROB_TOP));
         return svt_read_cdf(reader, cdf, 2, ACCT_STR) ? PARTITION_SPLIT : PARTITION_VERT;
     }
-    return PARTITION_INVALID;
+    return  PARTITION_SPLIT;
 }
 
-static INLINE void dec_get_txb_ctx(int plane_bsize, const TxSize tx_size,
-    const int plane, int blk_row, int blk_col, EbDecHandle *dec_handle,
-    TXB_CTX *const txb_ctx)
+static INLINE void dec_get_txb_ctx(EbDecHandle *dec_handle,
+    const TxSize tx_size, const int plane, int plane_bsize, int txb_h_unit,
+    int txb_w_unit, int blk_row, int blk_col, TXB_CTX *const txb_ctx)
 {
 #define MAX_TX_SIZE_UNIT 16
 
     ParseCtxt *parse_ctx = (ParseCtxt*)dec_handle->pv_parse_ctxt;
     ParseNbr4x4Ctxt *nbr_ctx = &parse_ctx->parse_nbr4x4_ctxt;
     EbColorConfig *clr_cfg = &dec_handle->seq_header.color_config;
-    int txb_w_unit = tx_size_wide_unit[tx_size];
-    int txb_h_unit = tx_size_high_unit[tx_size];
-    uint8_t suby   = plane ? clr_cfg->subsampling_y : 0;
 
+    int suby = plane ? clr_cfg->subsampling_y : 0;
     int dc_sign = 0;
     int k = 0;
     uint8_t *above_dc_ctx = nbr_ctx->above_dc_ctx[plane] + blk_col;
@@ -2011,7 +2423,6 @@ uint16_t parse_transform_block(EbDecHandle *dec_handle,
     TxSize tx_size, int skip)
 {
     uint16_t eob = 0 , sub_x, sub_y;
-    BlockSize bsize = pi->mi->sb_type;
 
     sub_x = (plane > 0) ? dec_handle->seq_header.color_config.subsampling_x : 0;
     sub_y = (plane > 0) ? dec_handle->seq_header.color_config.subsampling_y : 0;
@@ -2024,12 +2435,32 @@ uint16_t parse_transform_block(EbDecHandle *dec_handle,
         return eob;
 
     if (!skip) {
+        TXB_CTX txb_ctx;
+
+        BlockSize bsize = pi->mi->sb_type;
         int plane_bsize = (bsize == BLOCK_INVALID) ? BLOCK_INVALID :
             ss_size_lookup[bsize][sub_x][sub_y];
-        TXB_CTX txb_ctx;
-        dec_get_txb_ctx(plane_bsize, tx_size, plane,
-                    start_y, start_x,
-                    dec_handle, &txb_ctx);
+
+        int txb_w_unit = tx_size_wide_unit[tx_size];
+        int txb_h_unit = tx_size_high_unit[tx_size];
+
+        if (pi->mb_to_right_edge < 0) {
+            int plane_bsize = (pi->mi->sb_type == BLOCK_INVALID) ? BLOCK_INVALID :
+                ss_size_lookup[pi->mi->sb_type][sub_x][sub_y];
+            const int blocks_wide = max_block_wide(pi, plane_bsize, sub_x);
+            txb_w_unit = AOMMIN(txb_w_unit, (blocks_wide - blk_col));
+        }
+
+        if (pi->mb_to_bottom_edge < 0) {
+            int plane_bsize = (pi->mi->sb_type == BLOCK_INVALID) ? BLOCK_INVALID :
+                ss_size_lookup[pi->mi->sb_type][sub_x][sub_y];
+            const int blocks_high = max_block_high(pi, plane_bsize, sub_y);
+            txb_h_unit = AOMMIN(txb_h_unit, (blocks_high - blk_row));
+        }
+
+
+        dec_get_txb_ctx(dec_handle, tx_size, plane, plane_bsize, txb_h_unit,
+            txb_w_unit, start_y, start_x, &txb_ctx);
 
         eob = parse_coeffs(dec_handle, pi, r, start_y, start_x, blk_col,
             blk_row, plane, txb_ctx.txb_skip_ctx, txb_ctx.dc_sign_ctx,
@@ -2052,8 +2483,8 @@ void parse_residual(EbDecHandle *dec_handle, PartitionInfo_t *pi, SvtReader *r,
     ModeInfo_t *mode = pi->mi;
 
     int skip     = mode->skip;
-    int force_split_cnt = 0;
-    int num_tu, total_num_tu;
+    uint32_t force_split_cnt = 0;
+    uint32_t num_tu, total_num_tu;
 
     const int max_blocks_wide = max_block_wide(pi, mi_size, 0);
     const int max_blocks_high = max_block_high(pi, mi_size, 0);
@@ -2101,14 +2532,14 @@ void parse_residual(EbDecHandle *dec_handle, PartitionInfo_t *pi, SvtReader *r,
 
                     assert(total_num_tu != 0);
                     assert(total_num_tu ==
-                        (parse_ctx->num_tus[plane][0] + parse_ctx->num_tus[plane][1] +
+                        (uint32_t)(parse_ctx->num_tus[plane][0] + parse_ctx->num_tus[plane][1] +
                             parse_ctx->num_tus[plane][2] + parse_ctx->num_tus[plane][3]));
                 }
                 assert(num_tu != 0);
 
                 (void)total_num_tu;
 
-                for(int tu = 0; tu < num_tu; tu++)
+                for(uint32_t tu = 0; tu < num_tu; tu++)
                 {
                     assert(trans_info[plane]->tu_x_offset <= max_blocks_wide);
                     assert(trans_info[plane]->tu_y_offset <= max_blocks_high);
@@ -2150,9 +2581,9 @@ void parse_block(EbDecHandle *dec_handle, uint32_t mi_row, uint32_t mi_col,
 {
     ParseCtxt *parse_ctx = (ParseCtxt*)dec_handle->pv_parse_ctxt;
 
-    ModeInfo_t *mode = parse_ctx->cur_mode_info;
-
     int8_t      *cdef_strength = sb_info->sb_cdef_strength;
+
+    ModeInfo_t *mode = parse_ctx->cur_mode_info;
 
     int bw4 = mi_size_wide[subsize];
     int bh4 = mi_size_high[subsize];
@@ -2166,6 +2597,9 @@ void parse_block(EbDecHandle *dec_handle, uint32_t mi_row, uint32_t mi_col,
     part_info.sb_info   = sb_info;
     part_info.mi_row = mi_row;
     part_info.mi_col = mi_col;
+
+    for (int i = 0; i < MAX_MB_PLANE * PALETTE_MAX_SIZE; i++)
+        parse_ctx->parse_nbr4x4_ctxt.palette_colors[i] = 0;
 
     mode->partition = partition;
     /* TU offset update from parse ctxt info of previous block */
@@ -2260,14 +2694,8 @@ void parse_block(EbDecHandle *dec_handle, uint32_t mi_row, uint32_t mi_col,
     ZERO_ARRAY(parse_ctx->num_tus[AOM_PLANE_U], 4);
     ZERO_ARRAY(parse_ctx->num_tus[AOM_PLANE_V], 4);
 
-    if (!dec_is_inter_block(mode)) {
-        for (int plane = 0;
-            plane < AOMMIN(2, dec_handle->seq_header.
-                            color_config.mono_chrome ? 1 : MAX_MB_PLANE);
-            ++plane) {
-            palette_tokens(plane);
-        }
-    }
+    if (!dec_is_inter_block(mode))
+        palette_tokens(dec_handle, &part_info, mi_row, mi_col, r);
 
     read_block_tx_size(dec_handle, r, &part_info, subsize);
 
@@ -2302,11 +2730,13 @@ static INLINE void update_ext_partition_context(ParseCtxt *parse_ctx, int mi_row
         switch (partition) {
         case PARTITION_SPLIT:
             if (bsize != BLOCK_8X8) break;
+            goto PARTITIONS;
         case PARTITION_NONE:
         case PARTITION_HORZ:
         case PARTITION_VERT:
         case PARTITION_HORZ_4:
         case PARTITION_VERT_4:
+        PARTITIONS:
             update_partition_context(parse_ctx, mi_row, mi_col, subsize, bsize);
             break;
         case PARTITION_HORZ_A:
@@ -2330,8 +2760,8 @@ static INLINE void update_ext_partition_context(ParseCtxt *parse_ctx, int mi_row
     }
 }
 
-void parse_partition(EbDecHandle *dec_handle, uint32_t blk_row,
-    uint32_t blk_col, SvtReader *reader, BlockSize bsize, SBInfo *sb_info)
+void parse_partition(EbDecHandle *dec_handle, uint32_t blk_row, uint32_t blk_col,
+    SvtReader *reader, BlockSize bsize, SBInfo *sb_info)
 {
     ParseCtxt *parse_ctx = (ParseCtxt*)dec_handle->pv_parse_ctxt;
 
@@ -2418,14 +2848,235 @@ parse_block(dec_handle, db_r, db_c, reader, db_subsize,     \
         subSize, bsize, partition);
 }
 
-void parse_super_block(EbDecHandle *dec_handle,
-    uint32_t blk_row, uint32_t blk_col, SBInfo *sbInfo)
+
+int count_units_in_frame(int unitSize, int frameSize) {
+    return MAX((frameSize + (unitSize >> 1)) / unitSize, 1);
+}
+
+int decode_subexp_bool(int num_syms, int k, SvtReader *reader) {
+    int i = 0, mk = 0;
+    while (1) {
+        int b2 = i ? k + i - 1 : k;
+        int a = 1 << b2;
+        if (num_syms <= mk + 3 * a) {
+            return svt_read_ns_ae(reader, num_syms - mk, ACCT_STR) + mk;
+        }
+        else {
+            if (svt_read_literal(reader, 1, ACCT_STR)) {
+                i++;
+                mk += a;
+            }
+            else {
+                return svt_read_literal(reader, b2, ACCT_STR) + mk;
+            }
+        }
+    }
+}
+
+
+int decode_unsigned_subexp_with_ref_bool(int mx, int k, int r, SvtReader *reader) {
+    int v = decode_subexp_bool(mx, k, reader);
+    if ((r << 1) <= mx)
+        return inverse_recenter(r, v);
+    return mx - 1 - inverse_recenter(mx - 1 - r, v);
+}
+
+int decode_signed_subexp_with_ref_bool(int low, int high, int k, int r, SvtReader *reader) {
+    int x = decode_unsigned_subexp_with_ref_bool(high - low, k, r - low, reader);
+    return x + low;
+}
+void read_wiener_filter(int wiener_win, WienerInfo *wiener_info,
+                        WienerInfo *ref_wiener_info, SvtReader *reader)
+{
+    memset(wiener_info->vfilter, 0, sizeof(wiener_info->vfilter));
+    memset(wiener_info->hfilter, 0, sizeof(wiener_info->hfilter));
+
+    // vfilter[0] and vfilter[6]
+    if (wiener_win == WIENER_WIN) {
+        wiener_info->vfilter[0] = wiener_info->vfilter[WIENER_WIN - 1] =
+            decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP0_MINV,
+            WIENER_FILT_TAP0_MAXV + 1, WIENER_FILT_TAP0_SUBEXP_K,
+            ref_wiener_info->vfilter[0], reader);
+    }
+    else
+        wiener_info->vfilter[0] = wiener_info->vfilter[WIENER_WIN - 1] = 0;
+
+    // vfilter[1] and vfilter[5]
+    wiener_info->vfilter[1] = wiener_info->vfilter[WIENER_WIN - 2] =
+        decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP1_MINV,
+        WIENER_FILT_TAP1_MAXV + 1, WIENER_FILT_TAP1_SUBEXP_K,
+        ref_wiener_info->vfilter[1], reader);
+
+    // vfilter[2] and vfilter[4]
+    wiener_info->vfilter[2] = wiener_info->vfilter[WIENER_WIN - 3] =
+        decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP2_MINV,
+        WIENER_FILT_TAP2_MAXV + 1, WIENER_FILT_TAP2_SUBEXP_K,
+        ref_wiener_info->vfilter[2], reader);
+
+    // vfilter[3] - The central element has an implicit +WIENER_FILT_STEP
+    wiener_info->vfilter[WIENER_HALFWIN] = -2 * (wiener_info->vfilter[0] +
+        wiener_info->vfilter[1] + wiener_info->vfilter[2]);
+
+    // hfilter[0] and hfilter[6]
+    if (wiener_win == WIENER_WIN) {
+        wiener_info->hfilter[0] = wiener_info->hfilter[WIENER_WIN - 1] =
+            decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP0_MINV,
+            WIENER_FILT_TAP0_MAXV + 1, WIENER_FILT_TAP0_SUBEXP_K,
+            ref_wiener_info->hfilter[0], reader);
+    }
+    else
+        wiener_info->hfilter[0] = wiener_info->hfilter[WIENER_WIN - 1] = 0;
+
+    // hfilter[1] and hfilter[5]
+    wiener_info->hfilter[1] = wiener_info->hfilter[WIENER_WIN - 2] =
+        decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP1_MINV,
+        WIENER_FILT_TAP1_MAXV + 1, WIENER_FILT_TAP1_SUBEXP_K,
+        ref_wiener_info->hfilter[1], reader);
+
+    // hfilter[2] and hfilter[4]
+    wiener_info->hfilter[2] = wiener_info->hfilter[WIENER_WIN - 3] =
+        decode_signed_subexp_with_ref_bool(WIENER_FILT_TAP2_MINV,
+        WIENER_FILT_TAP2_MAXV + 1, WIENER_FILT_TAP2_SUBEXP_K,
+        ref_wiener_info->hfilter[2], reader);
+
+    // hfilter[3] - The central element has an implicit +WIENER_FILT_STEP
+    wiener_info->hfilter[WIENER_HALFWIN] = -2 * (wiener_info->hfilter[0] +
+        wiener_info->hfilter[1] + wiener_info->hfilter[2]);
+
+    memcpy(ref_wiener_info, wiener_info, sizeof(*wiener_info));
+}
+
+void read_sgrproj_filter(SgrprojInfo *sgrproj_info,
+    SgrprojInfo *ref_sgrproj_info, SvtReader *reader)
+{
+    sgrproj_info->ep = svt_read_literal(reader, SGRPROJ_PARAMS_BITS, ACCT_STR);
+    int *r = (int *)&eb_sgr_params[sgrproj_info->ep];
+
+    if (r[0] == 0) {
+        sgrproj_info->xqd[0] = 0;
+        sgrproj_info->xqd[1] = decode_signed_subexp_with_ref_bool(SGRPROJ_PRJ_MIN1,
+            SGRPROJ_PRJ_MAX1 + 1, SGRPROJ_PRJ_SUBEXP_K, ref_sgrproj_info->xqd[1], reader);
+    }
+    else if (r[1] == 0) {
+        sgrproj_info->xqd[0] = decode_signed_subexp_with_ref_bool(SGRPROJ_PRJ_MIN0,
+            SGRPROJ_PRJ_MAX0 + 1, SGRPROJ_PRJ_SUBEXP_K, ref_sgrproj_info->xqd[0], reader);
+        sgrproj_info->xqd[1] = clamp((1 << SGRPROJ_PRJ_BITS) - sgrproj_info->xqd[0],
+            SGRPROJ_PRJ_MIN1, SGRPROJ_PRJ_MAX1);
+    }
+    else {
+        sgrproj_info->xqd[0] = decode_signed_subexp_with_ref_bool(SGRPROJ_PRJ_MIN0,
+            SGRPROJ_PRJ_MAX0 + 1, SGRPROJ_PRJ_SUBEXP_K, ref_sgrproj_info->xqd[0], reader);
+        sgrproj_info->xqd[1] = decode_signed_subexp_with_ref_bool(SGRPROJ_PRJ_MIN1,
+            SGRPROJ_PRJ_MAX1 + 1, SGRPROJ_PRJ_SUBEXP_K, ref_sgrproj_info->xqd[1], reader);
+    }
+
+    memcpy(ref_sgrproj_info, sgrproj_info, sizeof(*sgrproj_info));
+}
+
+void read_lr_unit(EbDecHandle *dec_handle, SBInfo *sb_info, int32_t row,
+                  int32_t col, int32_t plane, SvtReader *reader)
+{
+    UNUSED(row);
+    UNUSED(col);
+
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    const LRParams *lrp = &frame_info->lr_params[plane];
+    ParseCtxt *parse_ctxt = (ParseCtxt *)dec_handle->pv_parse_ctxt;
+    if (lrp->frame_restoration_type == RESTORE_NONE) return;
+
+    sb_info->sb_lr_unit[plane]->restoration_type = RESTORE_NONE;
+    if (lrp->frame_restoration_type == RESTORE_SWITCHABLE) {
+        sb_info->sb_lr_unit[plane]->restoration_type =
+            svt_read_symbol(reader, parse_ctxt->cur_tile_ctx.switchable_restore_cdf,
+                RESTORE_SWITCHABLE_TYPES, ACCT_STR);
+    }
+    else if (lrp->frame_restoration_type == RESTORE_WIENER) {
+        if (svt_read_symbol(reader, parse_ctxt->cur_tile_ctx.wiener_restore_cdf,
+            2, ACCT_STR)) {
+            sb_info->sb_lr_unit[plane]->restoration_type = RESTORE_WIENER;
+        }
+    }
+    else if (lrp->frame_restoration_type == RESTORE_SGRPROJ) {
+        if (svt_read_symbol(reader, parse_ctxt->cur_tile_ctx.sgrproj_restore_cdf,
+            2, ACCT_STR)) {
+            sb_info->sb_lr_unit[plane]->restoration_type = RESTORE_SGRPROJ;
+        }
+    }
+
+    RestorationUnitInfo *ref_lr_plane = &parse_ctxt->ref_lr_unit[plane];
+    WienerInfo *wiener_info = &sb_info->sb_lr_unit[plane]->wiener_info;
+    SgrprojInfo *sgrproj_info = &sb_info->sb_lr_unit[plane]->sgrproj_info;
+    const int wiener_win = (plane > 0) ? WIENER_WIN_CHROMA : WIENER_WIN;
+
+    switch (sb_info->sb_lr_unit[plane]->restoration_type) {
+    case RESTORE_WIENER:
+        read_wiener_filter(wiener_win, wiener_info, &ref_lr_plane->wiener_info, reader);
+        break;
+    case RESTORE_SGRPROJ:
+        read_sgrproj_filter(sgrproj_info, &ref_lr_plane->sgrproj_info, reader);
+        break;
+    default:
+        assert(sb_info->sb_lr_unit[plane]->restoration_type == RESTORE_NONE);
+        break;
+    }
+}
+
+void read_lr(EbDecHandle *dec_handle, SBInfo *sb_info, int32_t row, int32_t col,
+             SvtReader *reader)
+{
+    FrameHeader *frame_info = &dec_handle->frame_header;
+    SeqHeader *seq_header = &dec_handle->seq_header;
+    EbColorConfig *color_config = &dec_handle->seq_header.color_config;
+    FrameSize *frame_size = &frame_info->frame_size;
+    if (frame_info->allow_intrabc) return;
+
+    int width = mi_size_wide[seq_header->sb_size];
+    int height = mi_size_high[seq_header->sb_size];
+    int num_planes = color_config->mono_chrome ? 1 : MAX_MB_PLANE;
+    for (int plane = 0; plane < num_planes; plane++) {
+        if (frame_info->lr_params[plane].frame_restoration_type != RESTORE_NONE) {
+            int subX = (plane == 0) ? 0 : dec_handle->seq_header.
+                color_config.subsampling_x;
+            int subY = (plane == 0) ? 0 : dec_handle->seq_header.
+                color_config.subsampling_y;
+            int unit_size = frame_info->lr_params[plane].loop_restoration_size;
+            int unit_rows = count_units_in_frame(unit_size,
+                ROUND_POWER_OF_TWO(frame_size->frame_height, subY));
+            int unit_cols = count_units_in_frame(unit_size,
+                ROUND_POWER_OF_TWO(frame_size->superres_upscaled_width, subX));
+            int unit_row_start = (row * (MI_SIZE >> subY) +
+                unit_size - 1) / unit_size;
+            int unit_row_end = MIN(unit_rows, ((row + height) * (MI_SIZE >> subY) +
+                unit_size - 1) / unit_size);
+            int numerator = 0, denominator = 0;
+            if (!(frame_size->frame_width == frame_size->superres_upscaled_width)) {
+                numerator = (MI_SIZE >> subX) * frame_size->superres_denominator;
+                denominator = unit_size * SCALE_NUMERATOR;
+            }
+            else {
+                numerator = MI_SIZE >> subX;
+                denominator = unit_size;
+            }
+            int unit_col_start = (col * numerator + denominator - 1) / denominator;
+            int unit_col_end = MIN(unit_cols, ((col + width) * numerator +
+                                   denominator - 1) / denominator);
+            for (int unit_row = unit_row_start; unit_row < unit_row_end; unit_row++) {
+                for (int unit_col = unit_col_start; unit_col < unit_col_end; unit_col++) {
+                    read_lr_unit(dec_handle, sb_info, unit_row, unit_col, plane, reader);
+                }
+            }
+        }
+    }
+}
+
+void parse_super_block(EbDecHandle *dec_handle, uint32_t blk_row,
+                       uint32_t blk_col, SBInfo *sbInfo)
 {
     ParseCtxt *parse_ctx = (ParseCtxt*)dec_handle->pv_parse_ctxt;
     SvtReader *reader = &parse_ctx->r;
-#if ENABLE_ENTROPY_TRACE
-    enable_dump = 1;
-#endif
+
+    read_lr(dec_handle, sbInfo, blk_row, blk_col, reader);
+
     parse_partition(dec_handle, blk_row, blk_col, reader,
-        dec_handle->seq_header.sb_size, sbInfo);
+                    dec_handle->seq_header.sb_size, sbInfo);
 }
