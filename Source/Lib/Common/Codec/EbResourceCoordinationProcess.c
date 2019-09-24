@@ -16,8 +16,8 @@
 #include "EbTransforms.h"
 #include "EbTime.h"
 
-void av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
-void av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
+void eb_av1_tile_set_col(TileInfo *tile, PictureParentControlSet * pcs_ptr, int col);
+void eb_av1_tile_set_row(TileInfo *tile, PictureParentControlSet * pcs_ptr, int row);
 void set_tile_info(PictureParentControlSet * pcs_ptr);
 void resource_coordination_context_dctor(EbPtr p)
 {
@@ -867,11 +867,11 @@ void* resource_coordination_kernel(void *input_ptr)
                 //Tile Loop
                 for (tile_row = 0; tile_row < tile_rows; tile_row++)
                 {
-                    av1_tile_set_row(&tile_info, ppcs_ptr, tile_row);
+                    eb_av1_tile_set_row(&tile_info, ppcs_ptr, tile_row);
 
                     for (tile_col = 0; tile_col < tile_cols; tile_col++)
                     {
-                        av1_tile_set_col(&tile_info, ppcs_ptr, tile_col);
+                        eb_av1_tile_set_col(&tile_info, ppcs_ptr, tile_col);
 
                         for (y_lcu_index = cm->tiles_info.tile_row_start_sb[tile_row]; y_lcu_index < (uint32_t)cm->tiles_info.tile_row_start_sb[tile_row + 1]; ++y_lcu_index)
                         {
