@@ -588,8 +588,8 @@ EbErrorType load_default_buffer_configuration_settings(
     //#====================== Processes number ======================
     sequence_control_set_ptr->total_process_init_count                    = 0;
 #if NEW_BUFF_CFG
-    //if (core_count > 1){
-    if (0){
+    if (core_count > 1){
+    //if (0){
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->picture_analysis_process_init_count            = MAX(MIN(15, core_count >> 1), core_count / 6));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = MAX(MIN(3, core_count >> 1), core_count / 12));

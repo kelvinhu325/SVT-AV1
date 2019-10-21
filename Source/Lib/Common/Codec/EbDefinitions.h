@@ -4275,7 +4275,7 @@ typedef struct stat_info_struct_t
     uint16_t                        ref_sb_decode_order[MAX_SB_CNT];   // [index]
     uint16_t                        ref_wxh[MAX_SB_CNT];      // [index] width*height
     uint16_t                        ref_sb_index[MAX_SB_CNT]; // [index]
-    uint16_t                        temporal_weight[STAT_LA_LENGTH]; // temp for validation
+    uint16_t                        temporal_weight[MAX_SB_CNT]; // temp for validation
 } stat_info_struct_t;
 #endif
 

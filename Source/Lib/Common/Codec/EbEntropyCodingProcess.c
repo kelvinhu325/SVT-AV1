@@ -593,8 +593,8 @@ void write_stat_info_to_file(
                 uint32_t head_decode_order = stat_info_struct[block_index].ref_sb_decode_order[sb_index];
                 if(head_decode_order == sequence_control_set_ptr->stat_queue_head_index) {
                     stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[sb_index]) / PROPAGATE_FACTOR);
-                    //assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
-                    //assert(temporal_weight==stat_info_struct[block_index].temporal_weight[sb_index]);
+                    assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
+                    assert(temporal_weight==stat_info_struct[block_index].temporal_weight[sb_index]);
                     //stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * stat_info_struct[block_index].temporal_weight[sb_index]));
                     if(sequence_control_set_ptr->stat_queue_head_index==0 && frame==(slide_win_length-1) && stat_info_struct[block_index].ref_sb_index[sb_index]<5)
                         printf("kelvin propagate_weight[%d]=%d, dst sb_index=%d\n", sb_index, propagate_weight[sb_index], stat_info_struct[block_index].ref_sb_index[sb_index]);
