@@ -171,6 +171,7 @@ extern "C" {
 #define FIXED_TMVP_HP                   1
 #define DISABLE_NSQ_FROM_MDC            0
 #define TWO_PASS                        1
+#define TWO_PASS_INFO                   1
 #define TWO_PASS_128x128                0 // Forces the first pass to used 128x128 active except for 360P or SC.
 #define TWO_PASS_USE_2NDP_ME_IN_1STP    1 // Add a config parameter to the first pass to use the ME settings of the second pass
 #define DISABLE_1PASS_QPS               0
@@ -4263,6 +4264,21 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
 #define NUMBER_OF_SPLIT_FLAG  (85 * 4) + 1
 #define NUM_OF_1080P_SB   510
 #endif
+
+#if TWO_PASS_INFO
+#define PROPAGATE_FACTOR 16
+#define STAT_LA_LENGTH 100
+#define MAX_SB_CNT 256
+typedef struct stat_info_struct_t
+{
+    uint16_t                        ref_sb_cnt;               //
+    uint16_t                        ref_sb_decode_order[MAX_SB_CNT];   // [index]
+    uint16_t                        ref_wxh[MAX_SB_CNT];      // [index] width*height
+    uint16_t                        ref_sb_index[MAX_SB_CNT]; // [index]
+    uint16_t                        temporal_weight[STAT_LA_LENGTH]; // temp for validation
+} stat_info_struct_t;
+#endif
+
 typedef struct stat_struct_t
 {
     uint32_t                        referenced_area[MAX_NUMBER_OF_TREEBLOCKS_PER_PICTURE];

@@ -20,6 +20,9 @@ typedef struct EbReferenceObject
     EbBool                          tmvp_enable_flag;
 #endif
     uint64_t                        ref_poc;
+#if TWO_PASS_INFO
+    uint64_t                        decode_order;
+#endif
 #if ADD_DELTA_QP_SUPPORT
     uint16_t                        qp;
 #else

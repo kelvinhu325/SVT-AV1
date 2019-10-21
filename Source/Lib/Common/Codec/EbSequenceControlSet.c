@@ -550,6 +550,25 @@ extern EbErrorType sb_params_init(
 #endif
     }
 
+#if TWO_PASS_INFO
+    //sequence_control_set_ptr->static_config.propagate_frac = 32;
+    //sequence_control_set_ptr->static_config.slide_win_length = 30;
+    if(sequence_control_set_ptr->static_config.use_output_stat_file)
+        printf("kelvin ---> sqcs input propagate_frac=%d, slide_win_length=%d\n", sequence_control_set_ptr->static_config.propagate_frac, sequence_control_set_ptr->static_config.slide_win_length);
+    sequence_control_set_ptr->stat_queue_head_index = 0;
+    for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
+    {
+        uint16_t   pictureBlockWidth  = pictureLcuWidth; //(pictureLcuWidth * sequence_control_set_ptr->sb_sz) / 8;
+        uint16_t   pictureBlockHeight = pictureLcuHeight; //(pictureLcuHeight * sequence_control_set_ptr->sb_sz) / 8;
+        EB_MALLOC(uint16_t*, sequence_control_set_ptr->propagate_weight_array[sw_index], sizeof(uint16_t) * pictureBlockWidth * pictureBlockHeight, EB_N_PTR);
+        //memset(sequence_control_set_ptr->propagate_weight_array[sw_index], PROPAGATE_FACTOR, sizeof(uint16_t) * pictureBlockWidth * pictureBlockHeight);
+        for(int i=0; i<(pictureBlockWidth * pictureBlockHeight); i++)
+            sequence_control_set_ptr->propagate_weight_array[sw_index][i] = PROPAGATE_FACTOR;
+        EB_MALLOC(stat_info_struct_t*, sequence_control_set_ptr->stat_info_struct[sw_index], sizeof(stat_info_struct_t) * pictureBlockWidth * pictureBlockHeight, EB_N_PTR);
+        sequence_control_set_ptr->stat_queue[sw_index] = EB_FALSE;
+    }
+    EB_CREATEMUTEX(EbHandle, sequence_control_set_ptr->stat_info_mutex, sizeof(EbHandle), EB_MUTEX);
+#endif
     sequence_control_set_ptr->picture_width_in_sb = pictureLcuWidth;
     sequence_control_set_ptr->picture_height_in_sb = pictureLcuHeight;
     sequence_control_set_ptr->sb_total_count = pictureLcuWidth * pictureLcuHeight;

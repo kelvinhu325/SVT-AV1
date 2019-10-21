@@ -1116,6 +1116,9 @@ void PadRefAndSetFlags(
 #endif
     // set up the ref POC
     referenceObject->ref_poc = picture_control_set_ptr->parent_pcs_ptr->picture_number;
+#if TWO_PASS_INFO
+    referenceObject->decode_order = picture_control_set_ptr->parent_pcs_ptr->decode_order;
+#endif
 
     // set up the QP
 #if ADD_DELTA_QP_SUPPORT && !QPM

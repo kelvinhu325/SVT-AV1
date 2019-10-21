@@ -183,6 +183,10 @@ EbErrorType CopyConfigurationParameters(
     callback_data->eb_enc_parameters.output_stat_file = config->output_stat_file;
     callback_data->eb_enc_parameters.use_input_stat_file = (EbBool)config->use_input_stat_file;
     callback_data->eb_enc_parameters.use_output_stat_file = (EbBool)config->use_output_stat_file;
+#if 1 //TWO_PASS_INFO
+    callback_data->eb_enc_parameters.slide_win_length = (EbBool)config->slide_win_length;
+    callback_data->eb_enc_parameters.propagate_frac = (EbBool)config->propagate_frac;
+#endif
 #endif
     callback_data->eb_enc_parameters.disable_dlf_flag = (EbBool)config->disable_dlf_flag;
     callback_data->eb_enc_parameters.enable_warped_motion = (EbBool)config->enable_warped_motion;

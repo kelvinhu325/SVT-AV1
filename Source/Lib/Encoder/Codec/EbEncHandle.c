@@ -588,7 +588,8 @@ EbErrorType load_default_buffer_configuration_settings(
     //#====================== Processes number ======================
     sequence_control_set_ptr->total_process_init_count                    = 0;
 #if NEW_BUFF_CFG
-    if (core_count > 1){
+    //if (core_count > 1){
+    if (0){
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->picture_analysis_process_init_count            = MAX(MIN(15, core_count >> 1), core_count / 6));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count =  MAX(MIN(20, core_count >> 1), core_count / 3));//1);//
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = MAX(MIN(3, core_count >> 1), core_count / 12));
@@ -603,6 +604,7 @@ EbErrorType load_default_buffer_configuration_settings(
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->cdef_process_init_count                        = MAX(MIN(40, core_count >> 1), core_count));
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->rest_process_init_count                        = MAX(MIN(40, core_count >> 1), core_count));
     }else{
+printf("kelvin ---> force single thread\n");
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->picture_analysis_process_init_count            = 1);
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->motion_estimation_process_init_count           = 1);
         sequence_control_set_ptr->total_process_init_count += (sequence_control_set_ptr->source_based_operations_process_init_count     = 1);
@@ -2429,6 +2431,10 @@ void CopyApiFromApp(
     sequence_control_set_ptr->static_config.output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->output_stat_file;
     sequence_control_set_ptr->static_config.use_input_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_input_stat_file;
     sequence_control_set_ptr->static_config.use_output_stat_file = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->use_output_stat_file;
+#if TWO_PASS_INFO
+    sequence_control_set_ptr->static_config.slide_win_length = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->slide_win_length;
+    sequence_control_set_ptr->static_config.propagate_frac = ((EbSvtAv1EncConfiguration*)pComponentParameterStructure)->propagate_frac;
+#endif
 #endif
 #if SHUT_FILTERING
     sequence_control_set_ptr->static_config.disable_dlf_flag = 1;//
@@ -2946,6 +2952,10 @@ EbErrorType eb_svt_enc_init_parameter(
 #if TWO_PASS
     config_ptr->use_input_stat_file = EB_FALSE;
     config_ptr->use_output_stat_file = EB_FALSE;
+#if TWO_PASS_INFO
+    config_ptr->slide_win_length = 20;
+    config_ptr->propagate_frac = 16;
+#endif
 #endif
     config_ptr->scene_change_detection = 0;
     config_ptr->rate_control_mode = 0;

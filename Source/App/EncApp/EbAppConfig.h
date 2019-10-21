@@ -177,6 +177,10 @@ typedef struct EbConfig
     FILE                    *output_stat_file;
     EbBool                  use_input_stat_file;
     EbBool                  use_output_stat_file;
+#if 1 //TWO_PASS_INFO
+    uint32_t                propagate_frac;
+    uint32_t                slide_win_length;
+#endif
 #endif
 
     EbBool                  y4m_input;

@@ -57,10 +57,16 @@ static void ConfigurePictureEdges(
     return;
 }
 #if TWO_PASS
+#if TWO_PASS_INFO
+void write_stat_info_to_file(
+    PictureControlSet     *picture_control_set_ptr,
+    SequenceControlSet    *sequence_control_set_ptr);
+#else
 void write_stat_to_file(
     SequenceControlSet    *sequence_control_set_ptr,
     stat_struct_t          stat_struct,
     uint64_t               ref_poc);
+#endif
 #endif
 /************************************************
  * Picture Manager Context Constructor
@@ -1233,12 +1239,15 @@ void* picture_manager_kernel(void *input_ptr)
                 {
                     // Release the nominal live_count value
 #if TWO_PASS
+#if TWO_PASS_INFO
+#else
                     if (sequence_control_set_ptr->static_config.use_output_stat_file &&
                         referenceEntryPtr->reference_object_ptr->live_count == 1)
                         write_stat_to_file(
                             sequence_control_set_ptr,
                             ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->stat_struct,
                             ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->ref_poc);
+#endif
 #endif
 
                     eb_release_object(referenceEntryPtr->reference_object_ptr);

@@ -205,6 +205,12 @@ typedef struct EbSvtAv1EncConfiguration
 *
 * Default is 0.*/
     EbBool                   use_output_stat_file;
+#if 1 //TWO_PASS_INFO
+    /* Slide window length */
+    uint32_t                 slide_win_length;
+    /* Propagate fraction */
+    uint32_t                 propagate_frac;
+#endif
 #endif
     /* Enable picture QP scaling between hierarchical levels
     *

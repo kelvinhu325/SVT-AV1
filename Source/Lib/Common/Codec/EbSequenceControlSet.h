@@ -246,6 +246,17 @@ extern "C" {
 
 
 #endif
+#if TWO_PASS_INFO
+        uint16_t                                *propagate_weight_array[STAT_LA_LENGTH];
+        stat_info_struct_t                      *stat_info_struct[STAT_LA_LENGTH];
+        uint32_t                                progagate_poc[STAT_LA_LENGTH];
+        uint16_t                        temporal_weight[STAT_LA_LENGTH]; // temp for validation
+        uint32_t                                stat_queue_head_index;
+        EbBool                                  stat_queue[STAT_LA_LENGTH];
+        uint32_t                                slide_win_length;
+        uint32_t                                propagate_frac;
+        EbHandle                                stat_info_mutex;
+#endif
     } SequenceControlSet;
 
     typedef struct EbSequenceControlSetInitData
