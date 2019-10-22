@@ -537,6 +537,7 @@ void write_stat_info_to_file(
     unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
 
+    memset(&stat_struct, 0, sizeof(stat_struct));
     // build propagate_weight_array
     for(int frame=0; frame < slide_win_length; frame++) {
         uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
@@ -560,7 +561,7 @@ void write_stat_info_to_file(
             }
         }
     }
-    //if(0)
+    if(0)
     if(sequence_control_set_ptr->stat_queue_head_index==0)
     {
         for(int frame=0; frame < slide_win_length; frame++) {
@@ -576,15 +577,14 @@ void write_stat_info_to_file(
     }
 
     // calculate new referenced_area for frame before slide window
-    int32_t ref_decode_order = decode_order - slide_win_length;
-    int32_t ref_poc = sequence_control_set_ptr->progagate_poc[ref_decode_order] ;
-    //printf("kelvin ---> write_stat_info_to_file write poc=%d, decode_order=%d, curr_poc=%d\n", ref_poc, ref_decode_order, picture_control_set_ptr->parent_pcs_ptr->picture_number);
+    int32_t ref_poc = sequence_control_set_ptr->progagate_poc[sequence_control_set_ptr->stat_queue_head_index] ;
+    //printf("kelvin ---> write_stat_info_to_file write poc=%d, decode_order=%d, curr_poc=%d\n", ref_poc, sequence_control_set_ptr->stat_queue_head_index, picture_control_set_ptr->parent_pcs_ptr->picture_number);
     int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
     if (fseek_return_value != 0)
         printf("Error in fseek  returnVal %i\n", fseek_return_value);
 
     for(int frame=0; frame < slide_win_length; frame++) {
-        ref_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
+        int32_t ref_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
         stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[ref_decode_order];
         uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[ref_decode_order];
         uint16_t temporal_weight = sequence_control_set_ptr->temporal_weight[ref_decode_order];
@@ -596,12 +596,17 @@ void write_stat_info_to_file(
                     assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
                     assert(temporal_weight==stat_info_struct[block_index].temporal_weight[sb_index]);
                     //stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * stat_info_struct[block_index].temporal_weight[sb_index]));
-                    if(sequence_control_set_ptr->stat_queue_head_index==0 && frame==(slide_win_length-1) && stat_info_struct[block_index].ref_sb_index[sb_index]<5)
-                        printf("kelvin propagate_weight[%d]=%d, dst sb_index=%d\n", sb_index, propagate_weight[sb_index], stat_info_struct[block_index].ref_sb_index[sb_index]);
+                    //if(sequence_control_set_ptr->stat_queue_head_index==0 && frame==(slide_win_length-1) && stat_info_struct[block_index].ref_sb_index[sb_index]<5)
+                    //    printf("kelvin propagate_weight[%d]=%d, dst sb_index=%d\n", sb_index, propagate_weight[sb_index], stat_info_struct[block_index].ref_sb_index[sb_index]);
                 }
             }
         }
     }
+    uint64_t referenced_area_avg = 0;
+    for(int block_index=0; block_index < block_total_count; block_index++)
+        referenced_area_avg += stat_struct.referenced_area[block_index];
+    referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+    printf("kelvin ---> pass0 decode_order%d referenced_area_avg=%d, sb_total_count=%d\n", sequence_control_set_ptr->stat_queue_head_index, referenced_area_avg, sequence_control_set_ptr->sb_total_count);
 
     fwrite(&stat_struct,
         sizeof(stat_struct_t),

@@ -598,6 +598,7 @@ static void read_stat_from_file(
     for (int sb_addr = 0; sb_addr < sequence_control_set_ptr->sb_total_count; ++sb_addr)
         referenced_area_avg += (picture_control_set_ptr->stat_struct.referenced_area[sb_addr] / sequence_control_set_ptr->sb_params_array[sb_addr].width / sequence_control_set_ptr->sb_params_array[sb_addr].height);
     referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+    //printf("kelvin ---> read_stat_from_file poc%d decode_order%d referenced_area_avg=%d sb_total_count=%d/%d, sb_size=%d\n", picture_control_set_ptr->decode_order, picture_control_set_ptr->picture_number, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->sb_tot_cnt, sequence_control_set_ptr->sb_size_pix);
 #endif
     picture_control_set_ptr->referenced_area_avg = referenced_area_avg;
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
