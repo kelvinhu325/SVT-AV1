@@ -604,7 +604,7 @@ void write_stat_info_to_file(
     }
     uint64_t referenced_area_avg = 0;
     for(int block_index=0; block_index < block_total_count; block_index++)
-        referenced_area_avg += stat_struct.referenced_area[block_index];
+        referenced_area_avg += (stat_struct.referenced_area[block_index] / (64*64));
     referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
     printf("kelvin ---> pass0 decode_order%d referenced_area_avg=%d, sb_total_count=%d\n", sequence_control_set_ptr->stat_queue_head_index, referenced_area_avg, sequence_control_set_ptr->sb_total_count);
 
@@ -791,7 +791,9 @@ void* entropy_coding_kernel(void *input_ptr)
 #if TWO_PASS
 #if TWO_PASS_INFO
                         if (sequence_control_set_ptr->static_config.use_output_stat_file) {
+                            eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
                             sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order] = EB_TRUE;
+                            eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
                             //if ((picture_control_set_ptr->parent_pcs_ptr->decode_order - sequence_control_set_ptr->stat_queue_head_index) >= sequence_control_set_ptr->static_config.slide_win_length)
                             {
                                 EbBool is_ready = EB_TRUE;
