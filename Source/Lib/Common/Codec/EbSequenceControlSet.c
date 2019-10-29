@@ -13,6 +13,14 @@ static void eb_sequence_control_set_dctor(EbPtr p)
     SequenceControlSet *obj = (SequenceControlSet*)p;
     EB_FREE_ARRAY(obj->sb_params_array);
     EB_FREE_ARRAY(obj->sb_geom);
+#if TWO_PASS_PPG_WEIGHT
+    for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
+    {
+        EB_FREE_ARRAY(obj->propagate_weight_array[sw_index]);
+        EB_FREE_ARRAY(obj->stat_info_struct[sw_index]);
+    }
+    EB_DESTROY_MUTEX(obj->stat_info_mutex);
+#endif
 }
 
 /**************************************************************************************************
@@ -441,6 +449,26 @@ extern EbErrorType sb_params_init(
         }
     }
 
+#if TWO_PASS_PPG_WEIGHT
+    //sequence_control_set_ptr->static_config.propagate_frac = 32;
+    //sequence_control_set_ptr->static_config.slide_win_length = 30;
+    if(sequence_control_set_ptr->use_output_stat_file)
+        printf("kelvin ---> sqcs input propagate_frac=%d, slide_win_length=%d\n", sequence_control_set_ptr->static_config.propagate_frac, sequence_control_set_ptr->static_config.slide_win_length);
+    sequence_control_set_ptr->stat_queue_head_index = 0;
+    for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
+    {
+        uint16_t   pictureBlockWidth  = pictureLcuWidth; //(pictureLcuWidth * sequence_control_set_ptr->sb_sz) / 8;
+        uint16_t   pictureBlockHeight = pictureLcuHeight; //(pictureLcuHeight * sequence_control_set_ptr->sb_sz) / 8;
+        EB_FREE_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index]);
+        EB_MALLOC_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index], pictureBlockWidth * pictureBlockHeight);
+        for(int i=0; i<(pictureBlockWidth * pictureBlockHeight); i++)
+            sequence_control_set_ptr->propagate_weight_array[sw_index][i] = PROPAGATE_FACTOR;
+        EB_FREE_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index]);
+        EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index], pictureBlockWidth * pictureBlockHeight);
+        sequence_control_set_ptr->stat_queue[sw_index] = EB_FALSE;
+    }
+    EB_CREATE_MUTEX(sequence_control_set_ptr->stat_info_mutex);
+#endif
     sequence_control_set_ptr->picture_width_in_sb = pictureLcuWidth;
     sequence_control_set_ptr->picture_height_in_sb = pictureLcuHeight;
     sequence_control_set_ptr->sb_total_count = pictureLcuWidth * pictureLcuHeight;

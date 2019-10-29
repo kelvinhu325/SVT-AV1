@@ -923,12 +923,15 @@ void* picture_manager_kernel(void *input_ptr)
                 {
                     // Release the nominal live_count value
 #if TWO_PASS
+#if TWO_PASS_PPG_WEIGHT
+#else
                     if (sequence_control_set_ptr->use_output_stat_file &&
                         referenceEntryPtr->reference_object_ptr->live_count == 1)
                         write_stat_to_file(
                             sequence_control_set_ptr,
                             ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->stat_struct,
                             ((EbReferenceObject*)referenceEntryPtr->reference_object_ptr->object_ptr)->ref_poc);
+#endif
 #endif
                     eb_release_object(referenceEntryPtr->reference_object_ptr);
                     referenceEntryPtr->reference_object_ptr = (EbObjectWrapper*)EB_NULL;

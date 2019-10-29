@@ -33,6 +33,10 @@
 #if TWO_PASS
 #define INPUT_STAT_FILE_TOKEN           "-input-stat-file"
 #define OUTPUT_STAT_FILE_TOKEN          "-output-stat-file"
+#if TWO_PASS_PPG_WEIGHT
+#define SLIDE_WIN_LENGTH_TOKEN          "-slide-win-length"
+#define PROPAGATE_FRAC_TOKEN            "-propagate-frac"
+#endif
 #endif
 #define STAT_FILE_TOKEN                 "-stat-file"
 #define WIDTH_TOKEN                     "-w"
@@ -198,6 +202,10 @@ static void set_output_stat_file(const char *value, EbConfig *cfg)
     if (cfg->output_stat_file) { fclose(cfg->output_stat_file); }
     FOPEN(cfg->output_stat_file, value, "wb");
 };
+#if TWO_PASS_PPG_WEIGHT
+static void set_slide_win_length(const char *value, EbConfig *cfg) { cfg->slide_win_length = (uint32_t)strtol(value, NULL, 0); };
+static void set_propagate_frac(const char *value, EbConfig *cfg) { cfg->propagate_frac = (uint32_t)strtol(value, NULL, 0); };
+#endif
 #if TWO_PASS_USE_2NDP_ME_IN_1STP
 static void set_snd_pass_enc_mode(const char *value, EbConfig *cfg) { cfg->snd_pass_enc_mode = (uint8_t)strtoul(value, NULL, 0); };
 #endif
@@ -332,6 +340,10 @@ config_entry_t config_entry[] = {
 #if TWO_PASS
     { SINGLE_INPUT, INPUT_STAT_FILE_TOKEN, "input_stat_file", set_input_stat_file },
     { SINGLE_INPUT, OUTPUT_STAT_FILE_TOKEN, "output_stat_file", set_output_stat_file },
+#if TWO_PASS_PPG_WEIGHT
+    { SINGLE_INPUT, SLIDE_WIN_LENGTH_TOKEN, "slide_win_length", set_slide_win_length },
+    { SINGLE_INPUT, PROPAGATE_FRAC_TOKEN, "propagate_frac", set_propagate_frac },
+#endif
 #endif
 
     // Interlaced Video
@@ -453,6 +465,10 @@ void eb_config_ctor(EbConfig *config_ptr)
 #if TWO_PASS
     config_ptr->input_stat_file                       = NULL;
     config_ptr->output_stat_file                      = NULL;
+#if TWO_PASS_PPG_WEIGHT
+    config_ptr->slide_win_length                      = 20;
+    config_ptr->propagate_frac                        = 16;
+#endif
 #endif
 
     config_ptr->frame_rate                            = 30 << 16;

@@ -363,6 +363,107 @@ static EbBool UpdateEntropyCodingRows(
     return processNextRow;
 }
 #if TWO_PASS
+#if TWO_PASS_PPG_WEIGHT
+/******************************************************
+ * Write Stat Info to File
+ ******************************************************/
+void write_stat_info_to_file(
+    PictureControlSet     *picture_control_set_ptr,
+    SequenceControlSet    *sequence_control_set_ptr,
+    uint64_t               decode_order,
+    uint32_t               slide_win_length)
+{
+    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    stat_struct_t stat_struct;
+    unsigned int pic_width_in_block  = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
+    unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
+    unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
+
+    memset(&stat_struct, 0, sizeof(stat_struct));
+    // build propagate_weight_array
+    for(int frame=0; frame < slide_win_length; frame++) {
+        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+        //memset(propagate_weight, PROPAGATE_FACTOR, sizeof(uint16_t) * pic_width_in_block * pic_height_in_block);
+        for(int i=0; i<block_total_count; i++)
+            propagate_weight[i] = PROPAGATE_FACTOR;
+    }
+
+    for(int frame=0; frame < slide_win_length; frame++) {
+        stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[(decode_order - frame) % STAT_LA_LENGTH];
+        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+        for(int block_index=0; block_index < block_total_count; block_index++) {
+            for(int sb_index=0; sb_index < stat_info_struct[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t ref_decode_order = stat_info_struct[block_index].ref_sb_decode_order[sb_index];
+                if(ref_decode_order > sequence_control_set_ptr->stat_queue_head_index && ref_decode_order <= decode_order)
+                {
+                    uint16_t *ref_propagate_weight = sequence_control_set_ptr->propagate_weight_array[(ref_decode_order) % STAT_LA_LENGTH];
+                    //ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / PROPAGATE_FACTOR);
+                    ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[sb_index] * stat_info_struct[block_index].ref_wxh[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / (PROPAGATE_FACTOR * sequence_control_set_ptr->sb_sz * sequence_control_set_ptr->sb_sz));
+                }
+            }
+        }
+    }
+    if(0)
+    if(sequence_control_set_ptr->stat_queue_head_index==0)
+    {
+        for(int frame=0; frame < slide_win_length; frame++) {
+            uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+            printf("kelvin ---> propagate weight frame %d in B0\n", frame);
+            for(int blocky_index=0; blocky_index < 5/*pic_height_in_block*/; blocky_index++) {
+                for(int blockx_index=0; blockx_index < 5/*pic_width_in_block*/; blockx_index++) {
+                    printf("%d ", propagate_weight[blockx_index + blocky_index * pic_width_in_block]);
+                }
+                printf("\n");
+            }
+        }
+    }
+
+    // calculate new referenced_area for frame before slide window
+    int32_t ref_poc = sequence_control_set_ptr->progagate_poc[sequence_control_set_ptr->stat_queue_head_index] ;
+    //printf("kelvin ---> write_stat_info_to_file write poc=%d, decode_order=%d, curr_poc=%d\n", ref_poc, sequence_control_set_ptr->stat_queue_head_index, picture_control_set_ptr->parent_pcs_ptr->picture_number);
+    int32_t fseek_return_value = fseek(sequence_control_set_ptr->static_config.output_stat_file, (long)ref_poc * sizeof(stat_struct_t), SEEK_SET);
+    if (fseek_return_value != 0)
+        printf("Error in fseek  returnVal %i\n", fseek_return_value);
+
+    for(int frame=0; frame < slide_win_length; frame++) {
+        int32_t ref_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
+        stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[ref_decode_order];
+        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[ref_decode_order];
+        uint16_t temporal_weight = sequence_control_set_ptr->temporal_weight[ref_decode_order];
+        for(int block_index=0; block_index < block_total_count; block_index++) {
+            for(int sb_index=0; sb_index < stat_info_struct[block_index].ref_sb_cnt; sb_index++) {
+                uint32_t head_decode_order = stat_info_struct[block_index].ref_sb_decode_order[sb_index];
+                if(head_decode_order == sequence_control_set_ptr->stat_queue_head_index) {
+                    //if(sequence_control_set_ptr->stat_queue_head_index!=49)
+                    if(1)
+                    {
+                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[sb_index]) / PROPAGATE_FACTOR);
+                    } else {
+                    //printf("kelvin ---> replace with temporal weight %d \n", sequence_control_set_ptr->stat_queue_head_index);
+                    assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
+                    assert(temporal_weight==stat_info_struct[block_index].temporal_weight[sb_index]);
+                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * temporal_weight));
+                    }
+                    //if(sequence_control_set_ptr->stat_queue_head_index==0 && frame==(slide_win_length-1) && stat_info_struct[block_index].ref_sb_index[sb_index]<5)
+                    //    printf("kelvin propagate_weight[%d]=%d, dst sb_index=%d\n", sb_index, propagate_weight[sb_index], stat_info_struct[block_index].ref_sb_index[sb_index]);
+                }
+            }
+        }
+    }
+    uint64_t referenced_area_avg = 0;
+    for(int block_index=0; block_index < block_total_count; block_index++)
+        referenced_area_avg += (stat_struct.referenced_area[block_index] / (64*64));
+    referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
+    printf("kelvin ---> pass0 decode_order=%d, poc=%d, referenced_area_avg=%d, sb_total_count=%d, temporal_weight=%d\n", sequence_control_set_ptr->stat_queue_head_index, ref_poc, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->temporal_weight[sequence_control_set_ptr->stat_queue_head_index]);
+
+    fwrite(&stat_struct,
+        sizeof(stat_struct_t),
+        (size_t)1,
+        sequence_control_set_ptr->static_config.output_stat_file);
+    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+}
+#else
+
 /******************************************************
  * Write Stat to File
  * write stat_struct per frame in the first pass
@@ -382,6 +483,7 @@ void write_stat_to_file(
         sequence_control_set_ptr->static_config.output_stat_file);
     eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
 }
+#endif
 #endif
 /******************************************************
  * Entropy Coding Kernel
@@ -505,6 +607,40 @@ void* entropy_coding_kernel(void *input_ptr)
 
                         encode_slice_finish(picture_control_set_ptr->entropy_coder_ptr);
 #if TWO_PASS
+#if TWO_PASS_PPG_WEIGHT
+                        if (sequence_control_set_ptr->use_output_stat_file) {
+                            eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+                            sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order] = EB_TRUE;
+                            eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+                            //if ((picture_control_set_ptr->parent_pcs_ptr->decode_order - sequence_control_set_ptr->stat_queue_head_index) >= sequence_control_set_ptr->static_config.slide_win_length)
+                            {
+                                EbBool is_ready = EB_TRUE;
+                                uint32_t slide_win_length = sequence_control_set_ptr->static_config.slide_win_length;
+                                if((sequence_control_set_ptr->stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                    slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - sequence_control_set_ptr->stat_queue_head_index - 1;
+                                for(int frame=sequence_control_set_ptr->stat_queue_head_index; frame <= (sequence_control_set_ptr->stat_queue_head_index + slide_win_length); frame++) {
+                                    if(!sequence_control_set_ptr->stat_queue[frame])
+                                        is_ready = EB_FALSE;
+                                }
+                                while(is_ready) {
+                                    //printf("kelvin ---> slide_win_length=%d, stat_queue_head_index=%d\n", slide_win_length, sequence_control_set_ptr->stat_queue_head_index);
+                                    write_stat_info_to_file(picture_control_set_ptr,
+                                        sequence_control_set_ptr,
+                                        sequence_control_set_ptr->stat_queue_head_index + slide_win_length,
+                                        slide_win_length);
+                                    sequence_control_set_ptr->stat_queue_head_index++;
+                                    if((sequence_control_set_ptr->stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                        slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - sequence_control_set_ptr->stat_queue_head_index - 1;
+                                    for(int frame=sequence_control_set_ptr->stat_queue_head_index; frame <= (sequence_control_set_ptr->stat_queue_head_index + slide_win_length); frame++) {
+                                        if(!sequence_control_set_ptr->stat_queue[frame])
+                                            is_ready = EB_FALSE;
+                                    }
+                                    if(sequence_control_set_ptr->stat_queue_head_index == sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                        break;
+                                }
+                            }
+                        }
+#else
                         // for Non Reference frames
                         if (sequence_control_set_ptr->use_output_stat_file &&
                             !picture_control_set_ptr->parent_pcs_ptr->is_used_as_reference_flag)
@@ -513,15 +649,19 @@ void* entropy_coding_kernel(void *input_ptr)
                                 *picture_control_set_ptr->parent_pcs_ptr->stat_struct_first_pass_ptr,
                                 picture_control_set_ptr->parent_pcs_ptr->picture_number);
 #endif
+#endif
                         // Release the List 0 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list0_count; ++ref_idx) {
 #if TWO_PASS
+#if TWO_PASS_PPG_WEIGHT
+#else
                             if (sequence_control_set_ptr->use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->live_count == 1)
                                 write_stat_to_file(
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx]->object_ptr)->ref_poc);
+#endif
 #endif
                             if (picture_control_set_ptr->ref_pic_ptr_array[0][ref_idx] != EB_NULL) {
 
@@ -532,12 +672,15 @@ void* entropy_coding_kernel(void *input_ptr)
                         // Release the List 1 Reference Pictures
                         for (ref_idx = 0; ref_idx < picture_control_set_ptr->parent_pcs_ptr->ref_list1_count; ++ref_idx) {
 #if TWO_PASS
+#if TWO_PASS_PPG_WEIGHT
+#else
                             if (sequence_control_set_ptr->use_output_stat_file &&
                                 picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL && picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->live_count == 1)
                                 write_stat_to_file(
                                     sequence_control_set_ptr,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->stat_struct,
                                     ((EbReferenceObject*)picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx]->object_ptr)->ref_poc);
+#endif
 #endif
 
                             if (picture_control_set_ptr->ref_pic_ptr_array[1][ref_idx] != EB_NULL)

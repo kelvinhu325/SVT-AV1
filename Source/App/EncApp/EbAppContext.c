@@ -186,6 +186,10 @@ EbErrorType CopyConfigurationParameters(
 #if TWO_PASS
     callback_data->eb_enc_parameters.input_stat_file = config->input_stat_file;
     callback_data->eb_enc_parameters.output_stat_file = config->output_stat_file;
+#if TWO_PASS_PPG_WEIGHT
+    callback_data->eb_enc_parameters.slide_win_length = (EbBool)config->slide_win_length;
+    callback_data->eb_enc_parameters.propagate_frac = (EbBool)config->propagate_frac;
+#endif
 #endif
     callback_data->eb_enc_parameters.stat_report = (EbBool)config->stat_report;
     callback_data->eb_enc_parameters.disable_dlf_flag = (EbBool)config->disable_dlf_flag;

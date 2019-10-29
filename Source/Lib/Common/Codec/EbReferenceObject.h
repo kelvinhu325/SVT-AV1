@@ -17,6 +17,9 @@ typedef struct EbReferenceObject
     EbPictureBufferDesc          *reference_picture;
     EbPictureBufferDesc          *reference_picture16bit;
     uint64_t                        ref_poc;
+#if TWO_PASS_PPG_WEIGHT
+    uint64_t                        decode_order;
+#endif
 #if ADD_DELTA_QP_SUPPORT
     uint16_t                        qp;
 #else

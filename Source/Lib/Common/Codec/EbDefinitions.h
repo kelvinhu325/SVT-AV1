@@ -78,6 +78,7 @@ extern "C" {
 
 
 #define TWO_PASS                          1 // Two pass encoding. For now, the encoder is called two times and data transfered using file.
+#define TWO_PASS_PPG_WEIGHT               1 // Two pass with propagate weight based on input propagate_frac and slide_win_length
                                             // Actions in the second pass: Frame and SB QP assignment and temporal filtering strenght change
 #define TWO_PASS_USE_2NDP_ME_IN_1STP      1 // Add a config parameter to the first pass to use the ME settings of the second pass
 
@@ -3299,6 +3300,20 @@ static const uint32_t MD_SCAN_TO_OIS_32x32_SCAN[CU_MAX_COUNT] =
     /*83 */3,
     /*84 */3,
 };
+
+#if TWO_PASS_PPG_WEIGHT
+#define PROPAGATE_FACTOR 16
+#define STAT_LA_LENGTH 100
+#define MAX_SB_CNT 256
+typedef struct stat_info_struct_t
+{
+    uint16_t                        ref_sb_cnt;
+    uint16_t                        ref_sb_decode_order[MAX_SB_CNT];
+    uint16_t                        ref_wxh[MAX_SB_CNT];         // width*height
+    uint16_t                        ref_sb_index[MAX_SB_CNT];
+    uint16_t                        temporal_weight[MAX_SB_CNT]; // temp for validation
+} stat_info_struct_t;
+#endif
 
 #if TWO_PASS
 typedef struct stat_struct_t
