@@ -13,7 +13,7 @@ static void eb_sequence_control_set_dctor(EbPtr p)
     SequenceControlSet *obj = (SequenceControlSet*)p;
     EB_FREE_ARRAY(obj->sb_params_array);
     EB_FREE_ARRAY(obj->sb_geom);
-#if TWO_PASS_PPG_WEIGHT
+#if 0 //TWO_PASS_PPG_WEIGHT
     for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
     {
         EB_FREE_ARRAY(obj->propagate_weight_array[sw_index]);
