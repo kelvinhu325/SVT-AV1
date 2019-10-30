@@ -531,7 +531,7 @@ void write_stat_info_to_file(
     uint64_t               decode_order,
     uint32_t               slide_win_length)
 {
-    eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
     stat_struct_t stat_struct;
     unsigned int pic_width_in_block  = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
@@ -612,7 +612,7 @@ void write_stat_info_to_file(
         sizeof(stat_struct_t),
         (size_t)1,
         sequence_control_set_ptr->static_config.output_stat_file);
-    eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+    eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
 }
 #else
 /******************************************************
@@ -791,9 +791,9 @@ void* entropy_coding_kernel(void *input_ptr)
 #if TWO_PASS
 #if TWO_PASS_INFO
                         if (sequence_control_set_ptr->static_config.use_output_stat_file) {
-                            eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+                            eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
                             sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order] = EB_TRUE;
-                            eb_release_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
+                            eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
                             //if ((picture_control_set_ptr->parent_pcs_ptr->decode_order - sequence_control_set_ptr->stat_queue_head_index) >= sequence_control_set_ptr->static_config.slide_win_length)
                             {
                                 EbBool is_ready = EB_TRUE;
