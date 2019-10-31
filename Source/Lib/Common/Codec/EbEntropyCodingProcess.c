@@ -453,7 +453,7 @@ void write_stat_info_to_file(
     for(int block_index=0; block_index < block_total_count; block_index++)
         referenced_area_avg += (stat_struct.referenced_area[block_index] / (64*64));
     referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
-    printf("kelvin ---> pass0 decode_order=%d, poc=%d, referenced_area_avg=%d, sb_total_count=%d, temporal_weight=%d, referenced_area[0]=%d\n", sequence_control_set_ptr->stat_queue_head_index, ref_poc, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->temporal_weight[sequence_control_set_ptr->stat_queue_head_index], stat_struct.referenced_area[0]);
+    //printf("kelvin ---> pass0 decode_order=%d, poc=%d, referenced_area_avg=%d, sb_total_count=%d, temporal_weight=%d, referenced_area[0]=%d\n", sequence_control_set_ptr->stat_queue_head_index, ref_poc, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->temporal_weight[sequence_control_set_ptr->stat_queue_head_index], stat_struct.referenced_area[0]);
 
     fwrite(&stat_struct,
         sizeof(stat_struct_t),
@@ -627,7 +627,9 @@ void* entropy_coding_kernel(void *input_ptr)
                                         sequence_control_set_ptr,
                                         sequence_control_set_ptr->stat_queue_head_index + slide_win_length,
                                         slide_win_length);
+                                    eb_block_on_mutex(sequence_control_set_ptr->stat_info_mutex);
                                     sequence_control_set_ptr->stat_queue_head_index++;
+                                    eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
                                     if((sequence_control_set_ptr->stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
                                         slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - sequence_control_set_ptr->stat_queue_head_index - 1;
                                     for(int frame=sequence_control_set_ptr->stat_queue_head_index; frame <= (sequence_control_set_ptr->stat_queue_head_index + slide_win_length); frame++) {
