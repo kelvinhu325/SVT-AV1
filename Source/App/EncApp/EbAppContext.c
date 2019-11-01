@@ -672,7 +672,7 @@ EbErrorType de_init_encoder(
     free(appMemoryMapAllChannels[instance_index]);
 
     // Destruct the component
-    eb_deinit_handle(callback_data_ptr->svt_encoder_handle);
+    // eb_deinit_handle(callback_data_ptr->svt_encoder_handle); //kelvin hack
 
     return return_error;
 }

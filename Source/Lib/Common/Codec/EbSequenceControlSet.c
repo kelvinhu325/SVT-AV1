@@ -20,6 +20,7 @@ static void eb_sequence_control_set_dctor(EbPtr p)
         EB_FREE_ARRAY(obj->stat_info_struct[sw_index]);
     }
     EB_DESTROY_MUTEX(obj->stat_info_mutex);
+    EB_DESTROY_MUTEX(obj->stat_queue_mutex);
 #endif
 }
 
@@ -465,9 +466,13 @@ extern EbErrorType sb_params_init(
             sequence_control_set_ptr->propagate_weight_array[sw_index][i] = PROPAGATE_FACTOR;
         EB_FREE_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index]);
         EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index], pictureBlockWidth * pictureBlockHeight);
+        for(int i = 0; i < (pictureBlockWidth * pictureBlockHeight); i++)
+            sequence_control_set_ptr->stat_info_struct[sw_index][i].ref_sb_cnt = 0;
+            //memset(sequence_control_set_ptr->stat_info_struct[sw_index], 0, sizeof(stat_info_struct_t));
         sequence_control_set_ptr->stat_queue[sw_index] = EB_FALSE;
     }
     EB_CREATE_MUTEX(sequence_control_set_ptr->stat_info_mutex);
+    EB_CREATE_MUTEX(sequence_control_set_ptr->stat_queue_mutex);
 #endif
     sequence_control_set_ptr->picture_width_in_sb = pictureLcuWidth;
     sequence_control_set_ptr->picture_height_in_sb = pictureLcuHeight;
