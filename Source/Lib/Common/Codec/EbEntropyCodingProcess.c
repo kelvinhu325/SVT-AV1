@@ -397,7 +397,7 @@ void write_stat_info_to_file(
                 {
                     uint16_t *ref_propagate_weight = sequence_control_set_ptr->propagate_weight_array[(ref_decode_order) % STAT_LA_LENGTH];
                     //ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / PROPAGATE_FACTOR);
-                    ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[sb_index] * stat_info_struct[block_index].ref_wxh[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / (PROPAGATE_FACTOR * sequence_control_set_ptr->sb_sz * sequence_control_set_ptr->sb_sz));
+                    ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[block_index] * stat_info_struct[block_index].ref_wxh[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / (PROPAGATE_FACTOR * sequence_control_set_ptr->sb_sz * sequence_control_set_ptr->sb_sz));
                 }
             }
         }
@@ -433,7 +433,7 @@ void write_stat_info_to_file(
                     //if(stat_queue_head_index!=49)
                     if(1)
                     {
-                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[sb_index]) / PROPAGATE_FACTOR);
+                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[block_index]) / PROPAGATE_FACTOR);
                     } else {
                     //printf("kelvin ---> replace with temporal weight %d \n", stat_queue_head_index);
                     assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
