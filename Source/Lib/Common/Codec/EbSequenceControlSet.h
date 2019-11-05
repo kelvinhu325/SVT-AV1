@@ -221,7 +221,7 @@ extern "C" {
         EbBool                                  use_input_stat_file;
         EbBool                                  use_output_stat_file;
 #if TWO_PASS_PPG_WEIGHT
-        uint16_t                                *propagate_weight_array[STAT_LA_LENGTH];
+        float                                  *propagate_weight_array[STAT_LA_LENGTH];
         stat_info_struct_t                      *stat_info_struct[STAT_LA_LENGTH];
         uint32_t                                progagate_poc[STAT_LA_LENGTH];
         uint16_t                                temporal_weight[STAT_LA_LENGTH]; // temp for validation

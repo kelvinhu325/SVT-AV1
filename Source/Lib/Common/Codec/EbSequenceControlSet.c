@@ -463,7 +463,7 @@ extern EbErrorType sb_params_init(
         EB_FREE_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index]);
         EB_MALLOC_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index], pictureBlockWidth * pictureBlockHeight);
         for(int i=0; i<(pictureBlockWidth * pictureBlockHeight); i++)
-            sequence_control_set_ptr->propagate_weight_array[sw_index][i] = PROPAGATE_FACTOR;
+            sequence_control_set_ptr->propagate_weight_array[sw_index][i] = 1.0;
         EB_FREE_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index]);
         EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index], pictureBlockWidth * pictureBlockHeight);
         for(int i = 0; i < (pictureBlockWidth * pictureBlockHeight); i++)

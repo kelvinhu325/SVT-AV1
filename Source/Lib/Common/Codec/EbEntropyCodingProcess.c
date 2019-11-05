@@ -378,39 +378,40 @@ void write_stat_info_to_file(
     unsigned int pic_height_in_block = (uint8_t)((sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz);
     unsigned int block_total_count = pic_width_in_block * pic_height_in_block;
     stat_struct_t stat_struct;
+    float propagate_frac = (float)sequence_control_set_ptr->static_config.propagate_frac / PROPAGATE_FACTOR;
 
     memset(&stat_struct, 0, sizeof(stat_struct));
     // build propagate_weight_array
     for(int frame=0; frame < slide_win_length; frame++) {
-        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+        float *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
         for(int i=0; i<block_total_count; i++)
-            propagate_weight[i] = PROPAGATE_FACTOR;
+            propagate_weight[i] = 1;
     }
 
     for(int frame=0; frame < slide_win_length; frame++) {
         stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[(decode_order - frame) % STAT_LA_LENGTH];
-        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+        float *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
         for(int block_index=0; block_index < block_total_count; block_index++) {
             for(int sb_index=0; sb_index < stat_info_struct[block_index].ref_sb_cnt; sb_index++) {
                 uint32_t ref_decode_order = stat_info_struct[block_index].ref_sb_decode_order[sb_index];
                 if(ref_decode_order > stat_queue_head_index && ref_decode_order <= decode_order)
                 {
-                    uint16_t *ref_propagate_weight = sequence_control_set_ptr->propagate_weight_array[(ref_decode_order) % STAT_LA_LENGTH];
-                    //ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / PROPAGATE_FACTOR);
-                    ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[block_index] * stat_info_struct[block_index].ref_wxh[sb_index] * sequence_control_set_ptr->static_config.propagate_frac) / (PROPAGATE_FACTOR * sequence_control_set_ptr->sb_sz * sequence_control_set_ptr->sb_sz));
+                    float *ref_propagate_weight = sequence_control_set_ptr->propagate_weight_array[(ref_decode_order) % STAT_LA_LENGTH];
+                    //ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += (propagate_weight[sb_index] * propagate_frac);
+                    ref_propagate_weight[stat_info_struct[block_index].ref_sb_index[sb_index]] += ((propagate_weight[block_index] * stat_info_struct[block_index].ref_wxh[sb_index] * propagate_frac) / (sequence_control_set_ptr->sb_sz * sequence_control_set_ptr->sb_sz));
                 }
             }
         }
     }
     if(0)
-    if(stat_queue_head_index==49)
+    if(stat_queue_head_index==0)
     {
         for(int frame=0; frame < slide_win_length; frame++) {
-            uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
+            float *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
             printf("kelvin ---> propagate weight frame %d in B0\n", frame);
             for(int blocky_index=0; blocky_index < 5/*pic_height_in_block*/; blocky_index++) {
                 for(int blockx_index=0; blockx_index < 5/*pic_width_in_block*/; blockx_index++) {
-                    printf("%d ", propagate_weight[blockx_index + blocky_index * pic_width_in_block]);
+                    printf("%f ", propagate_weight[blockx_index + blocky_index * pic_width_in_block]);
                 }
                 printf("\n");
             }
@@ -424,7 +425,7 @@ void write_stat_info_to_file(
     for(int frame=0; frame < slide_win_length; frame++) {
         int32_t ref_decode_order = (decode_order - frame) % STAT_LA_LENGTH;
         stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[ref_decode_order];
-        uint16_t *propagate_weight = sequence_control_set_ptr->propagate_weight_array[ref_decode_order];
+        float *propagate_weight = sequence_control_set_ptr->propagate_weight_array[ref_decode_order];
         uint16_t temporal_weight = sequence_control_set_ptr->temporal_weight[ref_decode_order];
         for(int block_index=0; block_index < block_total_count; block_index++) {
             for(int sb_index=0; sb_index < stat_info_struct[block_index].ref_sb_cnt; sb_index++) {
@@ -433,7 +434,7 @@ void write_stat_info_to_file(
                     //if(stat_queue_head_index!=49)
                     if(1)
                     {
-                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[block_index]) / PROPAGATE_FACTOR);
+                    stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  (uint32_t)(stat_info_struct[block_index].ref_wxh[sb_index] * propagate_weight[block_index]);
                     } else {
                     //printf("kelvin ---> replace with temporal weight %d \n", stat_queue_head_index);
                     assert(stat_info_struct[block_index].ref_wxh[sb_index]>0);
