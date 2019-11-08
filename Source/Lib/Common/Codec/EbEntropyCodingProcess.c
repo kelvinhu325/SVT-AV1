@@ -404,13 +404,13 @@ void write_stat_info_to_file(
         }
     }
     if(0)
-    if(stat_queue_head_index==0)
+    if(stat_queue_head_index==1)
     {
         for(int frame=0; frame < slide_win_length; frame++) {
             float *propagate_weight = sequence_control_set_ptr->propagate_weight_array[(decode_order - frame) % STAT_LA_LENGTH];
             printf("kelvin ---> propagate weight frame %d in B0\n", frame);
-            for(int blocky_index=0; blocky_index < 5/*pic_height_in_block*/; blocky_index++) {
-                for(int blockx_index=0; blockx_index < 5/*pic_width_in_block*/; blockx_index++) {
+            for(int blocky_index=0; blocky_index < 2/*pic_height_in_block*/; blocky_index++) {
+                for(int blockx_index=0; blockx_index < 2/*pic_width_in_block*/; blockx_index++) {
                     printf("%f ", propagate_weight[blockx_index + blocky_index * pic_width_in_block]);
                 }
                 printf("\n");
@@ -441,8 +441,8 @@ void write_stat_info_to_file(
                     assert(temporal_weight==stat_info_struct[block_index].temporal_weight[sb_index]);
                     stat_struct.referenced_area[stat_info_struct[block_index].ref_sb_index[sb_index]] +=  ((stat_info_struct[block_index].ref_wxh[sb_index] * temporal_weight));
                     }
-                    //if(stat_queue_head_index==0 && frame==(slide_win_length-1) && stat_info_struct[block_index].ref_sb_index[sb_index]<5)
-                    //    printf("kelvin propagate_weight[%d]=%d, dst sb_index=%d\n", sb_index, propagate_weight[sb_index], stat_info_struct[block_index].ref_sb_index[sb_index]);
+                    //if(stat_queue_head_index==1 && stat_info_struct[block_index].ref_sb_index[sb_index]==0)
+                    //    printf("kelvin frame=%d, sb_index=%d, ref_wxh=%d, propagate_weight[%d]=%f, temporal_weight=%d\n", frame, sb_index, stat_info_struct[block_index].ref_wxh[sb_index], block_index, propagate_weight[block_index], temporal_weight);
                 }
             }
         }
@@ -451,7 +451,8 @@ void write_stat_info_to_file(
     for(int block_index=0; block_index < block_total_count; block_index++)
         referenced_area_avg += (stat_struct.referenced_area[block_index] / (64*64));
     referenced_area_avg /= sequence_control_set_ptr->sb_total_count;
-    //printf("kelvin ---> pass0 decode_order=%d, poc=%d, referenced_area_avg=%d, sb_total_count=%d, temporal_weight=%d, referenced_area[0]=%d\n", stat_queue_head_index, ref_poc, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->temporal_weight[stat_queue_head_index], stat_struct.referenced_area[0]);
+    //if(stat_queue_head_index==0 || stat_queue_head_index==1 || stat_queue_head_index==2 || stat_queue_head_index==3)
+    //    printf("kelvin ---> pass0 decode_order=%d, poc=%d, referenced_area_avg=%d, sb_total_count=%d, temporal_weight=%d, referenced_area[0]=%d\n", stat_queue_head_index, ref_poc, referenced_area_avg, sequence_control_set_ptr->sb_total_count, sequence_control_set_ptr->temporal_weight[stat_queue_head_index], stat_struct.referenced_area[0]);
     eb_release_mutex(sequence_control_set_ptr->stat_info_mutex);
 
     eb_block_on_mutex(sequence_control_set_ptr->encode_context_ptr->stat_file_mutex);
@@ -614,33 +615,34 @@ void* entropy_coding_kernel(void *input_ptr)
                         if (sequence_control_set_ptr->use_output_stat_file) {
                             EbBool is_ready = EB_TRUE;
                             uint32_t slide_win_length = sequence_control_set_ptr->static_config.slide_win_length;
+                            uint32_t stat_queue_head_index = 0;
 
                             eb_block_on_mutex(sequence_control_set_ptr->stat_queue_mutex);
+                            stat_queue_head_index = sequence_control_set_ptr->stat_queue_head_index;
                             sequence_control_set_ptr->stat_queue[picture_control_set_ptr->parent_pcs_ptr->decode_order] = EB_TRUE;
-                            if((sequence_control_set_ptr->stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
-                                slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - sequence_control_set_ptr->stat_queue_head_index - 1;
-                            for(int frame=sequence_control_set_ptr->stat_queue_head_index; frame <= (sequence_control_set_ptr->stat_queue_head_index + slide_win_length); frame++) {
+                            if((stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - stat_queue_head_index - 1;
+                            for(int frame = stat_queue_head_index; frame <= (stat_queue_head_index + slide_win_length); frame++) {
                                 if(!sequence_control_set_ptr->stat_queue[frame])
                                     is_ready = EB_FALSE;
                             }
-                            eb_release_mutex(sequence_control_set_ptr->stat_queue_mutex);
                             while(is_ready) {
-                                //printf("kelvin ---> slide_win_length=%d, stat_queue_head_index=%d\n", slide_win_length, sequence_control_set_ptr->stat_queue_head_index);
+                                //printf("kelvin ---> slide_win_length=%d, stat_queue_head_index=%d\n", slide_win_length, stat_queue_head_index);
                                 write_stat_info_to_file(sequence_control_set_ptr,
-                                        sequence_control_set_ptr->stat_queue_head_index,
+                                        stat_queue_head_index,
                                         slide_win_length);
-                                eb_block_on_mutex(sequence_control_set_ptr->stat_queue_mutex);
-                                sequence_control_set_ptr->stat_queue_head_index++;
-                                if((sequence_control_set_ptr->stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
-                                    slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - sequence_control_set_ptr->stat_queue_head_index - 1;
-                                for(int frame=sequence_control_set_ptr->stat_queue_head_index; frame <= (sequence_control_set_ptr->stat_queue_head_index + slide_win_length); frame++) {
+                                stat_queue_head_index++;
+                                if((stat_queue_head_index + slide_win_length + 1) >= sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                    slide_win_length = sequence_control_set_ptr->static_config.frames_to_be_encoded - stat_queue_head_index - 1;
+                                for(int frame = stat_queue_head_index; frame <= (stat_queue_head_index + slide_win_length); frame++) {
                                     if(!sequence_control_set_ptr->stat_queue[frame])
                                         is_ready = EB_FALSE;
                                 }
-                                if(sequence_control_set_ptr->stat_queue_head_index == sequence_control_set_ptr->static_config.frames_to_be_encoded)
+                                if(stat_queue_head_index == sequence_control_set_ptr->static_config.frames_to_be_encoded)
                                     is_ready = EB_FALSE;
-                                eb_release_mutex(sequence_control_set_ptr->stat_queue_mutex);
+                                sequence_control_set_ptr->stat_queue_head_index = stat_queue_head_index;
                             }
+                            eb_release_mutex(sequence_control_set_ptr->stat_queue_mutex);
                         }
 #else
                         // for Non Reference frames
