@@ -3663,54 +3663,59 @@ EB_EXTERN void av1_encode_pass(
                                 if (context_ptr->mv_unit.pred_direction == UNI_PRED_LIST_0 || context_ptr->mv_unit.pred_direction == BI_PRED) {
                                     //List0-Y
                                     stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[picture_control_set_ptr->parent_pcs_ptr->decode_order % STAT_LA_LENGTH];
-                                    uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_0].x >> 3));
-                                    uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3));
-                                    uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
-                                    uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
-#if TWO_PASS_128x128
-                                    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + context_ptr->sb_sz - 1) / context_ptr->sb_sz;
-#else
-                                    uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-#endif
-                                    uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
-                                    uint16_t curr_sb_origin_x = context_ptr->cu_origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
-                                    uint16_t curr_sb_origin_y = context_ptr->cu_origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
-                                    uint16_t curr_sb_index = curr_sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (curr_sb_origin_y / context_ptr->sb_sz);
+                                    int16_t origin_x = (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_0].x >> 3);
+                                    int16_t origin_y = (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_0].y >> 3);
+                                    int16_t sb_sz = context_ptr->sb_sz;
+                                    int16_t sb_origin_x = origin_x / sb_sz * sb_sz;
+                                    int16_t sb_origin_y = origin_y / sb_sz * sb_sz;
+                                    int32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                    int32_t pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                    int16_t sb_index = sb_origin_x / sb_sz + pic_width_in_sb * (sb_origin_y / sb_sz);
+                                    uint16_t curr_sb_origin_x = context_ptr->cu_origin_x / sb_sz * sb_sz;
+                                    uint16_t curr_sb_origin_y = context_ptr->cu_origin_y / sb_sz * sb_sz;
+                                    uint16_t curr_sb_index = curr_sb_origin_x / sb_sz + pic_width_in_sb * (curr_sb_origin_y / sb_sz);
                                     uint16_t sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
                                     uint16_t width, height;
                                     uint16_t weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
 
-                                    width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
-                                    height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                    width = MIN(sb_origin_x + sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                    height = MIN(sb_origin_y + sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     assert(sequence_control_set_ptr->progagate_poc[refObj0->decode_order] == refObj0->ref_poc);
                                     //if(curr_sb_index==224 && picture_control_set_ptr->parent_pcs_ptr->decode_order == 12)
                                     //    printf("kelvin0 ---> poc%d curr_sb_index224 sb_cnt=%d,cxy=(%d %d) bwh=(%d %d) sb_index=%d, weight=%d\n", picture_control_set_ptr->parent_pcs_ptr->picture_number, sb_cnt, context_ptr->cu_origin_x, context_ptr->cu_origin_y, blk_geom->bwidth, blk_geom->bheight, sb_index, weight);
-                                    stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
-                                    stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
-                                    stat_info_struct[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
-                                    stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
-                                    //assert(stat_info_struct[curr_sb_index].ref_wxh[0]);//kassert
-                                    stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
+                                    if (origin_x >= 0 && origin_x < (pic_width_in_sb * sb_sz) &&
+                                       origin_y >= 0 && origin_y < (pic_height_in_sb * sb_sz)) {
+                                       stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
+                                       stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
+                                       stat_info_struct[curr_sb_index].ref_sb_decode_order[sb_cnt] = refObj0->decode_order;
+                                       stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
+                                       stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
+                                       assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
+                                    }
 
-                                    if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
-                                        //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
-                                        sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
-                                        sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
-                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x + sb_sz &&
+                                        (origin_x / sb_sz + 1) >= 0 && (origin_x / sb_sz + 1) < pic_width_in_sb  &&
+                                        origin_y >= 0 && (origin_y / sb_sz) < pic_height_in_sb) {
+                                        sb_origin_x = (origin_x / sb_sz + 1)* sb_sz;
+                                        sb_origin_y = origin_y / sb_sz * sb_sz;
+                                        sb_index = sb_origin_x / sb_sz + pic_width_in_sb * (sb_origin_y / sb_sz);
+                                        assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
                                         width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
-                                        height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                        height = MIN(sb_origin_y + sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                         stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
                                         stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
                                         stat_info_struct[curr_sb_index].ref_sb_decode_order[sb_cnt]   = refObj0->decode_order;
                                         stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
                                         stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
                                     }
-                                    if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
-                                        //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
-                                        sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
-                                        sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
-                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
-                                        width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                    if (origin_y + blk_geom->bheight > sb_origin_y + sb_sz &&
+                                        origin_x >= 0 && (origin_x / sb_sz) < pic_width_in_sb  &&
+                                        (origin_y / sb_sz + 1) >= 0 && (origin_y / sb_sz + 1) < pic_height_in_sb) {
+                                        sb_origin_x = (origin_x / sb_sz)* sb_sz;
+                                        sb_origin_y = (origin_y / sb_sz + 1) * sb_sz;
+                                        sb_index = sb_origin_x / sb_sz + pic_width_in_sb * (sb_origin_y / sb_sz);
+                                        assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
+                                        width = MIN(sb_origin_x + sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                         height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                         stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
                                         stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
@@ -3718,12 +3723,14 @@ EB_EXTERN void av1_encode_pass(
                                         stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
                                         stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
                                     }
-                                    if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
-                                            origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
-                                        //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
-                                        sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
-                                        sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
-                                        sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    if (origin_x + blk_geom->bwidth > sb_origin_x + sb_sz &&
+                                        origin_y + blk_geom->bheight > sb_origin_y + sb_sz &&
+                                        (origin_x / sb_sz + 1) >= 0 && (origin_x / sb_sz + 1) < pic_width_in_sb  &&
+                                        (origin_y / sb_sz + 1) >= 0 && (origin_y / sb_sz + 1) < pic_height_in_sb) {
+                                        sb_origin_x = (origin_x / sb_sz + 1)* sb_sz;
+                                        sb_origin_y = (origin_y / sb_sz + 1) * sb_sz;
+                                        sb_index = sb_origin_x / sb_sz + pic_width_in_sb * (sb_origin_y / sb_sz);
+                                        assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
                                         width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                         height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                         stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
@@ -3743,35 +3750,43 @@ EB_EXTERN void av1_encode_pass(
                             if (context_ptr->mv_unit.pred_direction == UNI_PRED_LIST_1 || context_ptr->mv_unit.pred_direction == BI_PRED) {
                                 //List1-Y
                                 stat_info_struct_t *stat_info_struct = sequence_control_set_ptr->stat_info_struct[picture_control_set_ptr->parent_pcs_ptr->decode_order % STAT_LA_LENGTH];
-                                uint16_t origin_x = MAX(0, (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_1].x >> 3));
-                                uint16_t origin_y = MAX(0, (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3));
-                                uint16_t sb_origin_x = origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
-                                uint16_t sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
-                                uint32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
-                                uint16_t sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
-                                uint16_t curr_sb_origin_x = context_ptr->cu_origin_x / context_ptr->sb_sz * context_ptr->sb_sz;
-                                uint16_t curr_sb_origin_y = context_ptr->cu_origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
-                                uint16_t curr_sb_index = curr_sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (curr_sb_origin_y / context_ptr->sb_sz);
+                                int16_t origin_x = (int16_t)context_ptr->cu_origin_x + (context_ptr->mv_unit.mv[REF_LIST_1].x >> 3);
+                                int16_t origin_y = (int16_t)context_ptr->cu_origin_y + (context_ptr->mv_unit.mv[REF_LIST_1].y >> 3);
+                                int16_t sb_sz = context_ptr->sb_sz;
+                                int16_t sb_origin_x = origin_x / sb_sz * sb_sz;
+                                int16_t sb_origin_y = origin_y / sb_sz * sb_sz;
+                                int32_t pic_width_in_sb = (sequence_control_set_ptr->seq_header.max_frame_width + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                int32_t pic_height_in_sb = (sequence_control_set_ptr->seq_header.max_frame_height + sequence_control_set_ptr->sb_sz - 1) / sequence_control_set_ptr->sb_sz;
+                                int16_t sb_index = sb_origin_x / sb_sz + pic_width_in_sb * (sb_origin_y / sb_sz);
+                                uint16_t curr_sb_origin_x = context_ptr->cu_origin_x / sb_sz * sb_sz;
+                                uint16_t curr_sb_origin_y = context_ptr->cu_origin_y / sb_sz * sb_sz;
+                                uint16_t curr_sb_index = curr_sb_origin_x / sb_sz + pic_width_in_sb * (curr_sb_origin_y / sb_sz);
                                 uint16_t sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
                                 uint16_t width, height;
                                 uint16_t weight = 1 << (4 - picture_control_set_ptr->parent_pcs_ptr->temporal_layer_index);
 
-                                width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
-                                height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
+                                width = MIN(sb_origin_x + sb_sz, origin_x + blk_geom->bwidth) - origin_x;
+                                height = MIN(sb_origin_y + sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                 assert(sequence_control_set_ptr->progagate_poc[refObj1->decode_order] == refObj1->ref_poc);
                                 //if(curr_sb_index==224 && picture_control_set_ptr->parent_pcs_ptr->decode_order == 12)
                                 //    printf("kelvin1 ---> poc%d curr_sb_index224 sb_cnt=%d,cxy=(%d %d) bwh=(%d %d) sb_index=%d, weight=%d\n", picture_control_set_ptr->parent_pcs_ptr->picture_number, sb_cnt, context_ptr->cu_origin_x, context_ptr->cu_origin_y, blk_geom->bwidth, blk_geom->bheight, sb_index, weight);
-                                stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
-                                stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
-                                stat_info_struct[curr_sb_index].ref_sb_decode_order[sb_cnt]   = refObj1->decode_order;
-                                stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
-                                //assert(stat_info_struct[curr_sb_index].ref_wxh[0]);//kassert
-                                stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
-                                if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz) {
-                                    //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
+                                if (origin_x >= 0 && origin_x < (pic_width_in_sb * sb_sz) &&
+                                   origin_y >= 0 && origin_y < (pic_height_in_sb * sb_sz)) {
+                                   stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
+                                   stat_info_struct[curr_sb_index].ref_wxh[sb_cnt]      = width * height;
+                                   stat_info_struct[curr_sb_index].ref_sb_decode_order[sb_cnt]   = refObj1->decode_order;
+                                   stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
+                                   //assert(stat_info_struct[curr_sb_index].ref_wxh[0]);//kassert
+                                   stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
+                                   assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
+                                }
+                                if (origin_x + blk_geom->bwidth > sb_origin_x + sb_sz &&
+                                    (origin_x / sb_sz + 1) >= 0 && (origin_x / sb_sz + 1) < pic_width_in_sb  &&
+                                     origin_y >= 0 && (origin_y / sb_sz) < pic_height_in_sb) {
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = origin_y / context_ptr->sb_sz * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
                                     width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                     height = MIN(sb_origin_y + context_ptr->sb_sz, origin_y + blk_geom->bheight) - origin_y;
                                     stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
@@ -3780,11 +3795,13 @@ EB_EXTERN void av1_encode_pass(
                                     stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
                                     stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
                                 }
-                                if (origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
-                                    //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
+                                if (origin_y + blk_geom->bheight > sb_origin_y + sb_sz &&
+                                    origin_x >= 0 && (origin_x / sb_sz) < pic_width_in_sb  &&
+                                    (origin_y / sb_sz + 1) >= 0 && (origin_y / sb_sz + 1) < pic_height_in_sb) {
                                     sb_origin_x = (origin_x / context_ptr->sb_sz)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
                                     width = MIN(sb_origin_x + context_ptr->sb_sz, origin_x + blk_geom->bwidth) - origin_x;
                                     height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                     stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;
@@ -3793,12 +3810,14 @@ EB_EXTERN void av1_encode_pass(
                                     stat_info_struct[curr_sb_index].temporal_weight[sb_cnt] = weight;
                                     stat_info_struct[curr_sb_index].ref_sb_cnt           = ++sb_cnt;
                                 }
-                                if (origin_x + blk_geom->bwidth > sb_origin_x + context_ptr->sb_sz &&
-                                        origin_y + blk_geom->bheight > sb_origin_y + context_ptr->sb_sz) {
-                                    //sb_cnt = stat_info_struct[curr_sb_index].ref_sb_cnt;
+                                if (origin_x + blk_geom->bwidth > sb_origin_x + sb_sz &&
+                                    origin_y + blk_geom->bheight > sb_origin_y + sb_sz &&
+                                    (origin_x / sb_sz + 1) >= 0 && (origin_x / sb_sz + 1) < (int32_t)pic_width_in_sb  &&
+                                    (origin_y / sb_sz + 1) >= 0 && (origin_y / sb_sz + 1) < (int32_t)pic_height_in_sb) {
                                     sb_origin_x = (origin_x / context_ptr->sb_sz + 1)* context_ptr->sb_sz;
                                     sb_origin_y = (origin_y / context_ptr->sb_sz + 1) * context_ptr->sb_sz;
                                     sb_index = sb_origin_x / context_ptr->sb_sz + pic_width_in_sb * (sb_origin_y / context_ptr->sb_sz);
+                                    assert(sb_index<(pic_width_in_sb*pic_height_in_sb));
                                     width = origin_x + blk_geom->bwidth - MAX(sb_origin_x, origin_x);
                                     height = origin_y + blk_geom->bheight - MAX(sb_origin_y, origin_y);
                                     stat_info_struct[curr_sb_index].ref_sb_index[sb_cnt] = sb_index;

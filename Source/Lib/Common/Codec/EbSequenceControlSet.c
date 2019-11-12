@@ -13,10 +13,9 @@ static void eb_sequence_control_set_dctor(EbPtr p)
     SequenceControlSet *obj = (SequenceControlSet*)p;
     EB_FREE_ARRAY(obj->sb_params_array);
     EB_FREE_ARRAY(obj->sb_geom);
-#if 0 //TWO_PASS_PPG_WEIGHT
+#if TWO_PASS_PPG_WEIGHT
     for (uint16_t sw_index = 0; sw_index < STAT_LA_LENGTH; sw_index++)
     {
-        EB_FREE_ARRAY(obj->propagate_weight_array[sw_index]);
         EB_FREE_ARRAY(obj->stat_info_struct[sw_index]);
     }
     EB_DESTROY_MUTEX(obj->stat_info_mutex);
@@ -460,10 +459,6 @@ extern EbErrorType sb_params_init(
     {
         uint16_t   pictureBlockWidth  = pictureLcuWidth; //(pictureLcuWidth * sequence_control_set_ptr->sb_sz) / 8;
         uint16_t   pictureBlockHeight = pictureLcuHeight; //(pictureLcuHeight * sequence_control_set_ptr->sb_sz) / 8;
-        EB_FREE_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index]);
-        EB_MALLOC_ARRAY(sequence_control_set_ptr->propagate_weight_array[sw_index], pictureBlockWidth * pictureBlockHeight);
-        for(int i=0; i<(pictureBlockWidth * pictureBlockHeight); i++)
-            sequence_control_set_ptr->propagate_weight_array[sw_index][i] = 1.0;
         EB_FREE_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index]);
         EB_MALLOC_ARRAY(sequence_control_set_ptr->stat_info_struct[sw_index], pictureBlockWidth * pictureBlockHeight);
         for(int i = 0; i < (pictureBlockWidth * pictureBlockHeight); i++)
