@@ -19,7 +19,7 @@ extern "C" {
 #define TILES    1
 #define TWO_PASS_USE_2NDP_ME_IN_1STP                1
 #define TWO_PASS                                    1
-#define STAT_UPDATE_SW                              1
+#define STAT_UPDATE_SW                              0
 #define ALT_REF_OVERLAY_APP                         1
     //***HME***
 #define EB_HME_SEARCH_AREA_COLUMN_MAX_COUNT         2
