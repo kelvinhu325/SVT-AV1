@@ -90,7 +90,8 @@ void global_motion_estimation(PictureParentControlSet *pcs_ptr, MeContext *conte
             compute_global_motion(input_picture_ptr,
                                   ref_picture_ptr,
                                   &pcs_ptr->global_motion_estimation[list_index][ref_pic_index],
-                                  pcs_ptr->frm_hdr.allow_high_precision_mv);
+                                  pcs_ptr->frm_hdr.allow_high_precision_mv,
+                                  pcs_ptr->gm_level);
         }
     }
 }
@@ -103,7 +104,7 @@ static INLINE int convert_to_trans_prec(int allow_hp, int coor) {
 }
 
 void compute_global_motion(EbPictureBufferDesc *input_pic, EbPictureBufferDesc *ref_pic,
-                           EbWarpedMotionParams *bestWarpedMotion, int allow_high_precision_mv) {
+                           EbWarpedMotionParams *bestWarpedMotion, int allow_high_precision_mv, uint8_t gm_level) {
     MotionModel params_by_motion[RANSAC_NUM_MOTIONS];
     for (int m = 0; m < RANSAC_NUM_MOTIONS; m++) {
         memset(&params_by_motion[m], 0, sizeof(params_by_motion[m]));
@@ -173,6 +174,14 @@ void compute_global_motion(EbPictureBufferDesc *input_pic, EbPictureBufferDesc *
 
                 params_this_motion = params_by_motion[i].params;
                 av1_convert_model_to_params(params_this_motion, &tmp_wm_params);
+                // check if upscaled wmmat out of range
+                if (gm_level == GM_DOWN) {
+                    if ((tmp_wm_params.wmmat[0] * 2) < (GM_TRANS_MIN * GM_TRANS_DECODE_FACTOR) ||
+                        (tmp_wm_params.wmmat[0] * 2) > (GM_TRANS_MAX * GM_TRANS_DECODE_FACTOR) ||
+                        (tmp_wm_params.wmmat[1] * 2) < (GM_TRANS_MIN * GM_TRANS_DECODE_FACTOR) ||
+                        (tmp_wm_params.wmmat[1] * 2) > (GM_TRANS_MAX * GM_TRANS_DECODE_FACTOR))
+                        continue;
+                }
 
                 if (tmp_wm_params.wmtype != IDENTITY) {
                     const int64_t warp_error = av1_refine_integerized_param(&tmp_wm_params,

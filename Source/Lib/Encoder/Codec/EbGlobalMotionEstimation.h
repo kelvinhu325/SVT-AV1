@@ -23,6 +23,6 @@
 void global_motion_estimation(PictureParentControlSet *pcs_ptr, MeContext *context_ptr,
                               EbPictureBufferDesc *input_picture_ptr);
 void compute_global_motion(EbPictureBufferDesc *input_pic, EbPictureBufferDesc *ref_pic,
-                           EbWarpedMotionParams *bestWarpedMotion, int allow_high_precision_mv);
+                           EbWarpedMotionParams *bestWarpedMotion, int allow_high_precision_mv, uint8_t gm_level);
 
 #endif // EbGlobalMotionEstimation_h
