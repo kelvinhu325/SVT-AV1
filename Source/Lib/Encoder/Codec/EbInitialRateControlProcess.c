@@ -1369,7 +1369,13 @@ void tpl_mc_flow_dispenser(
 #if USE_ORIGIN_YUV
                                                                    pcs_ptr,
 #endif
-                                                                   input_picture_ptr, input_picture_ptr->stride_y, mb_origin_x, mb_origin_y, 16, 16);
+                                                                   input_picture_ptr,
+#if 1
+                                                                   dst_buffer, // use rec_picture to generate neighbor samples
+#else
+                                                                   0,
+#endif
+                                                                   input_picture_ptr->stride_y, mb_origin_x, mb_origin_y, 16, 16);
                         uint8_t ois_intra_mode = ois_mb_results_ptr->intra_mode;
                         int32_t p_angle = av1_is_directional_mode((PredictionMode)ois_intra_mode) ? mode_to_angle_map[(PredictionMode)ois_intra_mode] : 0;
                         // Edge filter

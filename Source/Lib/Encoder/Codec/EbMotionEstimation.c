@@ -12720,7 +12720,7 @@ EbErrorType open_loop_intra_search_mb(
 #if USE_ORIGIN_YUV
                                                        pcs_ptr,
 #endif
-                                                       input_ptr, input_ptr->stride_y, cu_origin_x, cu_origin_y, bsize, bsize);
+                                                       input_ptr, 0, input_ptr->stride_y, cu_origin_x, cu_origin_y, bsize, bsize);
             uint8_t ois_intra_mode;
             uint8_t intra_mode_start = DC_PRED;
             EbBool   enable_paeth                = pcs_ptr->scs_ptr->static_config.enable_paeth == DEFAULT ? EB_TRUE : (EbBool) pcs_ptr->scs_ptr->static_config.enable_paeth;
