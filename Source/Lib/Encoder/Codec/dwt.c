@@ -91,11 +91,11 @@ static void dyadic_analyze_53_uint8_input(int levels, int width, int height,
       }
     }
   }
-  int lv , nh, nw, hh = height, hw = width;
+  int lv , hh = height, hw = width;
   for (lv = 0; lv < levels; lv++) {
-    nh = hh;
+    int nh = hh;
     hh = (hh + 1) >> 1;
-    nw = hw;
+    int nw = hw;
     hw = (hw + 1) >> 1;
     if ((nh < 2) || (nw < 2)) return;
     for (i = 0; i < nh; i++) {
