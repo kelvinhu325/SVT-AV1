@@ -1934,8 +1934,8 @@ static int detect_app_forced_key(PictureParentControlSet *pcs_ptr) {
   KeyFrameCfg *const kf_cfg = &encode_context_ptr->kf_cfg;
   if (kf_cfg->fwd_kf_enabled) rc->next_is_fwd_key = 1;
   int num_frames_to_app_forced_key = -1;/*is_forced_keyframe_pending(
-      cpi->lookahead, cpi->lookahead->max_sz, cpi->compressor_stage);*/
-  if (num_frames_to_app_forced_key != -1) rc->next_is_fwd_key = 0;
+  //    cpi->lookahead, cpi->lookahead->max_sz, cpi->compressor_stage);*/
+  //if (num_frames_to_app_forced_key != -1) rc->next_is_fwd_key = 0;
   return num_frames_to_app_forced_key;
 }
 
@@ -2292,8 +2292,8 @@ static void find_next_key_frame(PictureParentControlSet *pcs_ptr, FIRSTPASS_STAT
     int kf_bits = 0;
     double zero_motion_accumulator = 1.0;
     double boost_score = 0.0;
-    double kf_raw_err = 0.0;
-    double kf_mod_err = 0.0;
+    double kf_raw_err ;
+    double kf_mod_err ;
     double kf_group_err = 0.0;
     double sr_accumulator = 0.0;
     //double kf_group_avg_error = 0.0;
