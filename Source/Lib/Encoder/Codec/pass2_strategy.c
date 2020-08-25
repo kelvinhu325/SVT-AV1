@@ -2561,9 +2561,9 @@ static void process_first_pass_stats(PictureParentControlSet *pcs_ptr,
                         //    : cm->mi_params.MBs;
     // The multiplication by 256 reverses a scaling factor of (>> 8)
     // applied when combining MB error values for the frame.
-    twopass->mb_av_energy = log((this_frame->intra_error / num_mbs) + 1.0);
+    twopass->mb_av_energy = log1p((this_frame->intra_error / num_mbs));
     twopass->frame_avg_haar_energy =
-        log((this_frame->frame_avg_wavelet_energy / num_mbs) + 1.0);
+        log1p((this_frame->frame_avg_wavelet_energy / num_mbs));
   }
 
   // Update the total stats remaining structure.
