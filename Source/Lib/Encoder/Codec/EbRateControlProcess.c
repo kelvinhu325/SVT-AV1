@@ -5919,7 +5919,7 @@ void av1_rc_init(SequenceControlSet *scs_ptr) {
   const RateControlCfg *const rc_cfg       = &encode_context_ptr->rc_cfg;
   const uint32_t width  = scs_ptr->seq_header.max_frame_width;
   const uint32_t height = scs_ptr->seq_header.max_frame_height;
-  int pass = 2;//hack always pass2
+  //int pass = 2;//hack always pass2
   int i;
 
   //if (pass == 0 && rc_cfg->mode == AOM_CBR) {

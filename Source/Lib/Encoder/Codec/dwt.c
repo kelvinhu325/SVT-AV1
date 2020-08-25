@@ -74,7 +74,7 @@ static void dyadic_analyze_53_uint8_input(int levels, int width, int height,
                                           uint8_t *x, int pitch_x,
                                           tran_low_t *c, int pitch_c,
                                           int dwt_scale_bits, int hbd) {
-  int lv, i, j, nh, nw, hh = height, hw = width;
+  int  i, j;
   tran_low_t buffer[2 * DWT_MAX_LENGTH];
 
   if (hbd) {
@@ -91,7 +91,7 @@ static void dyadic_analyze_53_uint8_input(int levels, int width, int height,
       }
     }
   }
-
+  int lv , nh, nw, hh = height, hw = width;
   for (lv = 0; lv < levels; lv++) {
     nh = hh;
     hh = (hh + 1) >> 1;
