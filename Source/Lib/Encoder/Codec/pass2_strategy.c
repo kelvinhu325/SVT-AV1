@@ -1039,12 +1039,11 @@ int determine_high_err_gf(double *errs, int *is_high, double *si, int len,
 
   // get silhouette as a measure of the classification quality
   double avg_si = 0;
-  // ai: avg dist of its own class, bi: avg dist to the other class
-  double ai, bi;
   if (count_low > 1 && count_high > 1) {
     for (int i = 0; i < len; i++) {
-      ai = 0;
-      bi = 0;
+      // ai: avg dist of its own class, bi: avg dist to the other class
+      double ai = 0;
+      double bi = 0;
       // calculate average distance to everyone in the same group
       // and in the other group
       for (int j = 0; j < len; j++) {
@@ -1191,7 +1190,6 @@ static void impose_gf_length(PictureParentControlSet *pcs_ptr, int max_intervals
     int cut_pos[MAX_NUM_GF_INTERVALS + 1]  = {0};
     int count_cuts                         = 1;
     int cur_last;
-    int cut_here;
     while (count_cuts < max_intervals + 1) {
         ++i;
         // reaches next key frame, break here
@@ -1203,7 +1201,7 @@ static void impose_gf_length(PictureParentControlSet *pcs_ptr, int max_intervals
             break;
         }
         // To cut based on PD decisions, only supports 5L for now
-        cut_here =
+        int cut_here =
             ((i % 16 == 0) || ((rc->frames_to_key - cut_pos[count_cuts - 1]) < 16 && (i % 8 == 0)))
                 ? 1 : 0;
         if (cut_here) {
@@ -1444,7 +1442,6 @@ static void define_gf_group(PictureParentControlSet *pcs_ptr, FIRSTPASS_STATS *t
   const RateControlCfg *const rc_cfg = &encode_context_ptr->rc_cfg;
   int i;
 
-  int flash_detected;
   int64_t gf_group_bits;
   const int is_intra_only = frame_params->frame_type == KEY_FRAME ||
                             frame_params->frame_type == INTRA_ONLY_FRAME;
@@ -1454,7 +1451,7 @@ static void define_gf_group(PictureParentControlSet *pcs_ptr, FIRSTPASS_STATS *t
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
   if (!is_intra_only) {
-    av1_zero(*gf_group);
+    av1_zero(gf_group);
     pcs_ptr->gf_group_index = 0;
   }
 
@@ -1520,7 +1517,7 @@ static void define_gf_group(PictureParentControlSet *pcs_ptr, FIRSTPASS_STATS *t
 
     // Test for the case where there is a brief flash but the prediction
     // quality back to an earlier frame is then restored.
-    flash_detected = detect_flash(twopass, 0);
+    int flash_detected = detect_flash(twopass, 0);
 
     // accumulate stats for next frame
     accumulate_next_frame_stats(&next_frame, frame_info, flash_detected,
@@ -1829,10 +1826,10 @@ static int test_candidate_kf(TWO_PASS *twopass,
       get_second_ref_usage_thresh(frame_count_so_far);
   int total_frames_to_test = SCENE_CUT_KEY_TEST_INTERVAL;
   int count_for_tolerable_prediction = 3;
-  int num_future_frames = 0;
   FIRSTPASS_STATS curr_frame;
 
   if (scenecut_mode == ENABLE_SCENECUT_MODE_1) {
+    int num_future_frames = 0;
     curr_frame = *this_frame;
     const FIRSTPASS_STATS *const start_position = twopass->stats_in;
     for (num_future_frames = 0; num_future_frames < SCENE_CUT_KEY_TEST_INTERVAL;
@@ -2260,7 +2257,7 @@ static void find_next_key_frame(PictureParentControlSet *pcs_ptr, FIRSTPASS_STAT
         gf_cfg->lag_in_frames, gf_cfg->enable_auto_arf);
 
     // Reset the GF group data structures.
-    av1_zero(*gf_group);
+    av1_zero(gf_group);
     pcs_ptr->gf_group_index = 0;
 
     // Clear the alt ref active flag and last group multi arf flags as they
@@ -2287,7 +2284,6 @@ static void find_next_key_frame(PictureParentControlSet *pcs_ptr, FIRSTPASS_STAT
         return;
     }
 #endif
-    int i;
     const FIRSTPASS_STATS *const start_position = twopass->stats_in;
     int kf_bits = 0;
     double zero_motion_accumulator = 1.0;
@@ -2332,7 +2328,7 @@ static void find_next_key_frame(PictureParentControlSet *pcs_ptr, FIRSTPASS_STAT
         kf_group_err = 0.0;
 
         // Rescan to get the correct error data for the forced kf group.
-        for (i = 0; i < rc->frames_to_key; ++i) {
+        for (int i = 0; i < rc->frames_to_key; ++i) {
             kf_group_err +=
                 calculate_modified_err(frame_info, twopass, &(encode_context_ptr->two_pass_cfg), &tmp_frame);
             if (EOF == input_stats(twopass, &tmp_frame)) break;
