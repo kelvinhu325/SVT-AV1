@@ -1451,7 +1451,7 @@ static void define_gf_group(PictureParentControlSet *pcs_ptr, FIRSTPASS_STATS *t
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
   if (!is_intra_only) {
-    av1_zero(gf_group);
+    av1_zero(*gf_group);
     pcs_ptr->gf_group_index = 0;
   }
 
@@ -2257,7 +2257,7 @@ static void find_next_key_frame(PictureParentControlSet *pcs_ptr, FIRSTPASS_STAT
         gf_cfg->lag_in_frames, gf_cfg->enable_auto_arf);
 
     // Reset the GF group data structures.
-    av1_zero(gf_group);
+    av1_zero(*gf_group);
     pcs_ptr->gf_group_index = 0;
 
     // Clear the alt ref active flag and last group multi arf flags as they
