@@ -44,6 +44,9 @@ extern "C" {
 #define FIX_VBR_BUG 1 // PR:1484 Fix 1st pass bug (bug from rebasing the branch)
 #define FIX_10BIT     1 // PR:1484 fix 1st pass for 10bit input
 #define FIX_RC_TOKEN     1 // PR:1484 fix RC token check to include double dash
+#define FIX_VBR_GF_INTERVAL   1 // fix 2nd pass min/max_gf_interval error
+#define FIX_VBR_LAST_GOP_BITS 1 // fix 2nd pass last group too big frame size error
+#define ZERO_MIN_QP_ALLOWED   1 // set default 0 min_qp_allowed as AOM to improve VBR quality
 //***************************************************************//
 #define FIX_PAD_CHROMA_AFTER_MCTF     1 // Padding chroma after altref
 #define FEATURE_NEW_DELAY             1 // Change delay some sorts of I in PicDecision
