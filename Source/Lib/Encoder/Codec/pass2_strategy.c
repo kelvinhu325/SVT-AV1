@@ -2318,13 +2318,8 @@ void svt_av1_init_second_pass(SequenceControlSet *scs_ptr) {
       encode_context_ptr->gf_cfg.lag_in_frames = 25;//hack scs_ptr->static_config.look_ahead_distance + 1;
       encode_context_ptr->gf_cfg.gf_min_pyr_height = scs_ptr->static_config.hierarchical_levels;
       encode_context_ptr->gf_cfg.gf_max_pyr_height = scs_ptr->static_config.hierarchical_levels;
-#if FIX_VBR_GF_INTERVAL
-      encode_context_ptr->gf_cfg.min_gf_interval   = 0;
-      encode_context_ptr->gf_cfg.max_gf_interval   = 0;
-#else
       encode_context_ptr->gf_cfg.min_gf_interval   = 1 << scs_ptr->static_config.hierarchical_levels;
       encode_context_ptr->gf_cfg.max_gf_interval   = 1 << scs_ptr->static_config.hierarchical_levels;
-#endif
       encode_context_ptr->gf_cfg.enable_auto_arf   = 1;
       encode_context_ptr->kf_cfg.sframe_dist   = 0; // not supported yet
       encode_context_ptr->kf_cfg.sframe_mode   = 0; // not supported yet
