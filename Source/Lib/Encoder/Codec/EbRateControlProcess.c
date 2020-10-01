@@ -574,6 +574,7 @@ void tpl_mc_flow_dispenser(
 
                         above_row = above_data + 16;
                         left_col = left_data + 16;
+                        TxSize tx_size = TX_16X16;
                         uint8_t *recon_buffer =
                             recon_picture_ptr->buffer_y + dst_basic_offset;
 
