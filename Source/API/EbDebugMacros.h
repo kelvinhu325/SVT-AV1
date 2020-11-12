@@ -69,6 +69,7 @@ extern "C" {
 #define TUNE_TPL_END_OF_GOP     1 // Tune TPL for end of Gop frames
 #endif
 #define FIX_GM_COMPUTATION      1  // Fix global motion computation for different modes
+#define LOW_DELAY_TUNE          1 // Tuning the 0B, 1B and 3B settings to support mingop 1, 2 and 4
 
 
 //FOR DEBUGGING - Do not remove
