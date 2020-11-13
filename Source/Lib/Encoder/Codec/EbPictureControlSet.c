@@ -1180,7 +1180,9 @@ static void picture_parent_control_set_dctor(EbPtr ptr) {
     EB_DESTROY_MUTEX(obj->tpl_me_mutex);
 #endif
 #if FEATURE_PA_ME
-  //  EB_DESTROY_SEMAPHORE(obj->pame_done_semaphore);
+    // for last psc pame_done_semaphore created in resource_coordination_kernel won't be destroy by RC kernel
+    if (obj->pame_done_semaphore)
+        EB_DESTROY_SEMAPHORE(obj->pame_done_semaphore);
     EB_DESTROY_MUTEX(obj->pame_done.mutex);
 #endif
     if(obj->frame_superres_enabled){
