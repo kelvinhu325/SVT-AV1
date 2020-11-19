@@ -109,7 +109,7 @@ extern "C" {
 #define TUNE_PALETTE_LEVEL                       1 // palette level will only be 6 for temporal layer == 0, not encode preset <=M3
 #define FEATURE_MDS0_ELIMINATE_CAND                  1 // Eliminate candidates based on the estimated cost of the distortion in mds0.
 #define TUNE_TPL_TOWARD_CHROMA                       1 //Tune TPL for better chroma. Only for 240P
-#define LOW_DELAY_TUNE          1 // Tuning the 0B, 1B and 3B settings to support mingop 1, 2 and 4
+#define TUNE_LOW_DELAY                               1 // Tuning the 0B, 1B and 3B settings to support mingop 1, 2 and 4
 
 
 //FOR DEBUGGING - Do not remove

@@ -2732,7 +2732,7 @@ static EbErrorType verify_settings(
         SVT_LOG("Error instance %u: QP must be [0 - %d]\n", channel_number + 1, MAX_QP_VALUE);
         return_error = EB_ErrorBadParameter;
     }
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
     if (config->hierarchical_levels > 5) {
         SVT_LOG("Error instance %u: Hierarchical Levels supported [0-5]\n", channel_number + 1);
         return_error = EB_ErrorBadParameter;

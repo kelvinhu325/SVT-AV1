@@ -179,7 +179,7 @@ typedef struct PredictionStructureGroup {
     PredictionStructure **prediction_structure_ptr_array;
     uint32_t              prediction_structure_count;
     void*                 priv; /* private member*/
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
     uint8_t               ref_count_used;
 #endif
 } PredictionStructureGroup;

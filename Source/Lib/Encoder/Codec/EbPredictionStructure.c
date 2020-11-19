@@ -81,7 +81,7 @@
 PredictionStructureConfigEntry flat_pred_struct[] = {{
     0, // GOP Index 0 - Temporal Layer
     0, // GOP Index 0 - Decode Order
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
     {1, 3, 5, 8},    // GOP Index 0 - Ref List 0
     {2, 4, 6, 0}     // GOP Index 0 - Ref List 1
 #else
@@ -107,7 +107,7 @@ PredictionStructureConfigEntry two_level_hierarchical_pred_struct[] = {
     {
         0, // GOP Index 0 - Temporal Layer
         0, // GOP Index 0 - Decode Order
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
         {2, 6, 10, 0},     // GOP Index 0 - Ref List 0
         {4, 8, 0, 0}      // GOP Index 0 - Ref List 1
 #else
@@ -118,7 +118,7 @@ PredictionStructureConfigEntry two_level_hierarchical_pred_struct[] = {
     {
         1, // GOP Index 1 - Temporal Layer
         1, // GOP Index 1 - Decode Order
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
         { 1, 2 ,3, 5},    // GOP Index 1 - Ref List 0
         {-1, 0, 0, 0}     // GOP Index 1 - Ref List 1
 #else
@@ -148,7 +148,7 @@ PredictionStructureConfigEntry three_level_hierarchical_pred_struct[] = {
     {
         0, // GOP Index 0 - Temporal Layer
         0, // GOP Index 0 - Decode Order
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
         {4, 12, 0, 0},     // GOP Index 0 - Ref List 0
         {4, 8, 0, 0}      // GOP Index 0 - Ref List 1
 #else
@@ -2052,7 +2052,7 @@ EbErrorType prediction_structure_group_ctor(PredictionStructureGroup *pred_struc
     }
 
     if (ref_count_used < MAX_REF_IDX) {
-#if LOW_DELAY_TUNE
+#if TUNE_LOW_DELAY
         for (int gop_i = 0; gop_i < 1; ++gop_i) {
             for (int i = ref_count_used; i < MAX_REF_IDX; ++i) {
                 prediction_structure_config_array[0].entry_array[gop_i].ref_list0[i] = 0;
